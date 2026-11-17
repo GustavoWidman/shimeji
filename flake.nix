@@ -20,6 +20,12 @@
       perSystem =
         { pkgs, ... }:
         {
+          devshells.default.env = [
+            {
+              name = "TYPST_FONT_PATHS";
+              value = "${pkgs.gyre-fonts}/share/fonts";
+            }
+          ];
           devshells.default.packages = with pkgs; [
             cargo
             clippy
