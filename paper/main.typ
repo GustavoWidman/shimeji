@@ -13,6 +13,13 @@
       location: [São Paulo, Brazil],
       email: "gustavo.widman@sou.inteli.edu.br",
     ),
+    (
+      name: "João Victor Wandermurem",
+      department: [Engenharia da Computação],
+      organization: [Instituto de Tecnologia e Liderança (Inteli)],
+      location: [São Paulo, Brazil],
+      email: "joao.oliveira@sou.inteli.edu.br",
+    ),
   ),
   index-terms: ([LSH], [KS X 3262], [hash functions], [SIMD], [Rust]),
   bibliography: bibliography("refs.bib", style: "ieee"),
