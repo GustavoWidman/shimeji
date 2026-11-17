@@ -1,0 +1,15 @@
+[package]
+name = "shimeji"
+version = "0.1.0"
+edition = "2024"
+description = "LSH-256 and LSH-512 (KS X 3262) hash functions"
+license = "MIT"
+repository = "https://github.com/GustavoWidman/shimeji"
+keywords = ["lsh", "hash", "simd", "kcmvp"]
+categories = ["cryptography", "no-std"]
+
+[dependencies]
+
+[profile.release]
+codegen-units = 1
+lto = "fat"
