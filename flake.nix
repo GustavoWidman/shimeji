@@ -18,14 +18,20 @@
       imports = [ devshell.flakeModule ];
 
       perSystem =
-        { pkgs, ... }:
+        { pkgs, lib, ... }:
         {
           devshells.default.env = [
             {
               name = "TYPST_FONT_PATHS";
               value = "${pkgs.gyre-fonts}/share/fonts";
             }
-          ];
+          ]
+          # nixpkgs builds Rust's standard library for macOS 14; rustc links
+          # for 11.0 by default, and the linker warns on every std object.
+          ++ lib.optional pkgs.stdenv.hostPlatform.isDarwin {
+            name = "MACOSX_DEPLOYMENT_TARGET";
+            value = "14.0";
+          };
           devshells.default.packages = with pkgs; [
             cargo
             clippy
