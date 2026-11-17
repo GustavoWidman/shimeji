@@ -24,4 +24,6 @@
 #set table(inset: (x: 4pt, y: 2pt))
 #show figure.where(kind: table): set figure.caption(position: top)
 
+#include "sections/intro.typ"
 #include "sections/lsh.typ"
+#include "sections/related.typ"
