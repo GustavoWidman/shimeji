@@ -1,0 +1,13 @@
+[package]
+name = "harness"
+version = "0.0.0"
+edition = "2024"
+description = "Differential tests and benchmarks for shimeji against reference LSH implementations"
+license = "MIT"
+publish = false
+
+[dependencies]
+shimeji = { path = ".." }
+
+[build-dependencies]
+cc = "1"
