@@ -6,10 +6,10 @@ LSH has optimized implementations in three languages. KISA, the Korea Internet &
 
 This paper presents shimeji, an implementation of LSH-256 and LSH-512 written entirely in Rust, and measures it against these implementations on an Apple M6 and an Intel Core i9-13900K. shimeji has two code paths. The single-message path hashes one message at a time, as every existing implementation does. The batched path hashes several independent messages at once, one message per SIMD lane: four LSH-256 or two LSH-512 messages in a 128-bit NEON register, eight or four in a 256-bit AVX2 register.
 
-Batching is an old technique for SHA-1 and SHA-2 @gueron2012simultaneous. For LSH it has been applied to LSH-256 on NEON @bang2026batched, and to pairs of LSH-256 messages held in the two halves of an AVX-512 register @lee2026avx512. On ARM, Bang et al. found that no single-message NEON code beats KISA's portable C, and that two LSH-512 messages per register gain nothing @bang2026batched. We contribute:
+Gueron and Krasnov batched SHA-1 and SHA-2 this way in 2012 @gueron2012simultaneous. For LSH, batching has been applied to LSH-256 on NEON @bang2026batched, and to pairs of LSH-256 messages held in the two halves of an AVX-512 register @lee2026avx512. On ARM, Bang et al. found that no single-message NEON code beats KISA's portable C, and that two LSH-512 messages per register gain nothing @bang2026batched. We contribute:
 
 - a pure-Rust LSH-256 and LSH-512 with single-message and batched paths for NEON and AVX2, checked against KISA's code and the Crypto++ test vectors;
 - a single-message path for ARM in which the integer units run the steps while NEON expands the message schedule, after the hybrid scalar and vector design that Becker and Kannwischer built for Keccak @becker2022hybrid;
-- batched LSH on AVX2 and batched LSH-512 on x86, which no published implementation offers;
-- a two-message LSH-512 batch for NEON that beats sequential C by rotating with the XAR instruction of the ARMv8.2 SHA-3 extension, which also absorbs the XOR of the step constant when the constants are rotated in advance;
-- the first comparison of LSH implementations across C, C++, Go and Rust, on both machines, in cycles and instructions per byte, which explains where each of them spends its time.
+- batched LSH-256 and LSH-512 for AVX2, the first batched LSH on AVX2 and the first batched LSH-512 on x86;
+- a two-message LSH-512 batch for NEON that beats sequential C. It rotates with XAR, the rotate-and-XOR instruction of the ARMv8.2 SHA-3 extension, and with the step constants rotated in advance the same instruction also applies their XOR;
+- the first comparison of LSH implementations across C, C++, Go and Rust, on both machines, in cycles and in instructions per byte. The instruction counts show where each implementation spends its time.

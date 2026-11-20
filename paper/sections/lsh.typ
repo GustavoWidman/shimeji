@@ -2,7 +2,7 @@
 
 = The LSH family <lsh>
 
-LSH-256 works on 32-bit words and returns digests of 224 or 256 bits @kim2014lsh. LSH-512 works on 64-bit words and returns 224, 256, 384 or 512 bits. Both are wide-pipe Merkle–Damgård constructions @lucks2005failure. A chaining variable of sixteen words, twice the size of the longest digest, absorbs the message one 32-word block at a time. Padding appends a single one bit and then zero bits up to the end of the block, with no length field, so a message that fills its last block gains one more block of padding. The digest is the XOR of the two halves of the final chaining variable, truncated to the digest length. @tab:params lists what tells the two functions apart.
+LSH-256 works on 32-bit words and returns digests of 224 or 256 bits @kim2014lsh. LSH-512 works on 64-bit words and returns 224, 256, 384 or 512 bits. Both are wide-pipe Merkle–Damgård constructions @lucks2005failure. A chaining variable of sixteen words, twice the size of the longest digest, absorbs the message one 32-word block at a time. Padding appends a one bit and then zero bits up to the end of the block. It adds no length field, so a message that fills its last block gains a whole block of padding. The digest is the XOR of the two halves of the final chaining variable, truncated to the digest length. @tab:params lists the parameters that differ between the two.
 
 #figure(
   table(
