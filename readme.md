@@ -4,7 +4,8 @@ An implementation of LSH-256 and LSH-512, the hash functions of the Korean
 standard KS X 3262, in Rust.
 
 Gustavo Wagon Widman and João Victor Wandermurem, Computer Engineering,
-Instituto de Tecnologia e Liderança (Inteli), São Paulo, Brazil.
+Instituto de Tecnologia e Liderança (Inteli), São Paulo, Brazil. Advised by
+Bryan Kano Ferreira.
 
 The paper is [PAPER.pdf](PAPER.pdf). Its typst sources are in `paper/`.
 
