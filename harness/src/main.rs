@@ -4,6 +4,7 @@
 
 mod bench;
 mod platform;
+mod summary;
 
 use std::collections::HashMap;
 use std::process::ExitCode;
@@ -16,12 +17,19 @@ usage:
   Lists are comma-separated. Defaults: every available implementation, all
   six digests, lengths 16,64,256,1024,4096,16384,1048576, 20 repetitions,
   20 ms per timed loop, results/<host>-<UTC time>.tsv. --cpu pins the thread
-  (Linux only).";
+  (Linux only).
+
+  harness summary FILE [--baseline NAME] [--cpus LIST] [--resamples N]
+
+  Prints the median and a 95% bootstrap interval per (digest, length,
+  implementation), and the speedup over --baseline (default kisa-ref).
+  --cpus keeps only repetitions that ended on the listed CPUs.";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let result = match args.first().map(String::as_str) {
         Some("bench") => bench::main(&args),
+        Some("summary") => summary::main(&args),
         _ => Err(USAGE.to_owned()),
     };
     match result {
