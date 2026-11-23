@@ -50,6 +50,21 @@ macro_rules! lsh {
             sc
         };
 
+        /// The step constants for the portable code. On aarch64, LSH-512's
+        /// go behind a pointer the optimizer cannot see through: with the
+        /// values in sight, LLVM builds each 64-bit constant from a `mov`
+        /// and three `movk`, while from memory one `ldp` loads two of them.
+        /// LSH-256's 32-bit constants take two instructions each, and
+        /// x86-64 loads any constant with one, so both stay immediates.
+        #[inline(always)]
+        fn sc() -> &'static [[$w; 8]; STEPS] {
+            if cfg!(target_arch = "aarch64") && WORD == 8 {
+                core::hint::black_box(&SC)
+            } else {
+                &SC
+            }
+        }
+
         /// One step: message addition, mix of each column pair, word permutation.
         #[inline(always)]
         fn step(mut s: [$w; 16], m: &[$w; 16], sc: &[$w; 8], alpha: u32, beta: u32) -> [$w; 16] {
@@ -82,19 +97,20 @@ macro_rules! lsh {
             })
         }
 
-        /// Absorbs one message block into the chaining variable.
+        /// Absorbs one message block into the chaining variable, with the
+        /// step constants `sc`.
         #[inline(always)]
-        pub(crate) fn compress(cv: &mut [$w; 16], block: &[u8; BLOCK]) {
+        pub(crate) fn compress(cv: &mut [$w; 16], block: &[u8; BLOCK], sc: &[[$w; 8]; STEPS]) {
             let mut even = load(&block[..BLOCK / 2]);
             let mut odd = load(&block[BLOCK / 2..]);
             let mut s = *cv;
-            s = step(s, &even, &SC[0], $alpha_e, $beta_e);
-            s = step(s, &odd, &SC[1], $alpha_o, $beta_o);
+            s = step(s, &even, &sc[0], $alpha_e, $beta_e);
+            s = step(s, &odd, &sc[1], $alpha_o, $beta_o);
             $(
                 even = expand(even, &odd);
-                s = step(s, &even, &SC[2 * $pair], $alpha_e, $beta_e);
+                s = step(s, &even, &sc[2 * $pair], $alpha_e, $beta_e);
                 odd = expand(odd, &even);
-                s = step(s, &odd, &SC[2 * $pair + 1], $alpha_o, $beta_o);
+                s = step(s, &odd, &sc[2 * $pair + 1], $alpha_o, $beta_o);
             )+
             even = expand(even, &odd);
             for k in 0..16 {
@@ -131,12 +147,12 @@ macro_rules! lsh {
                     if self.len < BLOCK {
                         return;
                     }
-                    compress(&mut self.cv, &self.buf);
+                    compress(&mut self.cv, &self.buf, sc());
                     self.len = 0;
                 }
                 let mut blocks = data.chunks_exact(BLOCK);
                 for block in &mut blocks {
-                    compress(&mut self.cv, block.try_into().unwrap());
+                    compress(&mut self.cv, block.try_into().unwrap(), sc());
                 }
                 let rest = blocks.remainder();
                 self.buf[..rest.len()].copy_from_slice(rest);
@@ -150,7 +166,7 @@ macro_rules! lsh {
             pub fn finalize(mut self) -> [u8; N] {
                 self.buf[self.len] = 0x80;
                 self.buf[self.len + 1..].fill(0);
-                compress(&mut self.cv, &self.buf);
+                compress(&mut self.cv, &self.buf, sc());
                 let mut h = [0u8; 8 * WORD];
                 for k in 0..8 {
                     h[WORD * k..WORD * (k + 1)].copy_from_slice(&(self.cv[k] ^ self.cv[k + 8]).to_le_bytes());
