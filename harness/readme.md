@@ -34,6 +34,19 @@ the C compiler and its flags are set in one place, `VARIANTS` and `CFLAGS` in
 `build.rs` writes the full command lines, with the rustc version, `RUSTFLAGS`
 and the release profile, to the header of every result file.
 
+Crypto++ (https://github.com/weidai11/cryptopp) is built from the commit
+`flake.nix` pins, the one `refs/fetch.sh` takes the test vectors from, with
+its own GNUmakefile, the same clang as KISA's code and `-O3 -fPIC -DNDEBUG`;
+the GNUmakefile adds `-mssse3` and `-mavx2` to its SSSE3 and AVX2 LSH files.
+`c/cryptopp.cpp` exports its LSH classes to C, one object per digest and
+thread, as `CalculateDigest` leaves it ready for the next message. Crypto++
+picks portable C++, SSSE3 or AVX2 code at run time, and each entry is
+available when Crypto++'s `AlgorithmProvider` names its path:
+`cryptopp-ref`, `cryptopp-ssse3` or `cryptopp-avx2`. it has no LSH-512-224
+class; the shim derives one from `LSH512_Base` with KISA's algorithm type
+for it. `build.rs` records the source, the make command and the compile
+lines of the LSH files in the result header.
+
 go-krypto (https://github.com/RyuaNerin/go-krypto, Go with assembly) is
 pinned to v1.3.0 by `go/go.mod` and `go/go.sum`; the first build downloads
 it through the Go module proxy. it is built with Go 1.26, because its amd64

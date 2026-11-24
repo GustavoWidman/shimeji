@@ -100,8 +100,84 @@ fn main() {
             build.compile(&name);
         }
     }
+    cryptopp(&manifest, &out, &mut info);
     gokrypto(&manifest, &out, &mut info);
     fs::write(out.join("build-info.txt"), info).unwrap();
+}
+
+/// Flags Crypto++ and the shim around it are compiled with: KISA's flags, and
+/// `-DNDEBUG`, which Crypto++'s GNUmakefile also adds by default.
+const CXXFLAGS: &[&str] = &["-O3", "-fPIC", "-DNDEBUG"];
+const CXX: &str = "clang++";
+
+/// Builds Crypto++ from `$CRYPTOPP_SRC`, which `flake.nix` pins, with its own
+/// GNUmakefile and the clang that compiles KISA's code, then the shim in
+/// `c/cryptopp.cpp`, and links both. The GNUmakefile adds `-mssse3` and
+/// `-mavx2` to the SSSE3 and AVX2 LSH files on x86-64.
+fn cryptopp(manifest: &Path, out: &Path, info: &mut String) {
+    println!("cargo::rerun-if-env-changed=CRYPTOPP_SRC");
+    let src = PathBuf::from(
+        env::var("CRYPTOPP_SRC").expect("CRYPTOPP_SRC is not set; run cargo from `nix develop`"),
+    );
+    // One build directory per source, so make rebuilds only what changed.
+    let dir = out.join(src.file_name().unwrap());
+    if !dir.exists() {
+        let copied = Command::new("cp").arg("-R").arg(&src).arg(&dir).status();
+        assert!(copied.unwrap().success(), "copying {}", src.display());
+        let writable = Command::new("chmod")
+            .arg("-R")
+            .arg("u+w")
+            .arg(&dir)
+            .status();
+        assert!(writable.unwrap().success());
+    }
+    let cxxflags = format!("CXXFLAGS={}", CXXFLAGS.join(" "));
+    let jobs = format!("-j{}", env::var("NUM_JOBS").unwrap_or("1".into()));
+    let make = ["static", &format!("CXX={CXX}"), &cxxflags, "CPPFLAGS="];
+    let output = Command::new("make")
+        .arg(&jobs)
+        .args(make)
+        .current_dir(&dir)
+        .output()
+        .expect("make is not on PATH");
+    assert!(
+        output.status.success(),
+        "building Crypto++ failed:\n{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    // The compile lines of the LSH files, kept from the build that ran them.
+    let commands = dir.join("lsh-commands.txt");
+    let lsh: String = String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| line.contains(" -c lsh"))
+        .map(|line| format!("{line}\n"))
+        .collect();
+    if !lsh.is_empty() {
+        fs::write(&commands, lsh).unwrap();
+    }
+
+    let mut build = cc::Build::new();
+    build
+        .cpp(true)
+        .compiler(CXX)
+        .no_default_flags(true)
+        .warnings(false)
+        .include(&dir)
+        .file(manifest.join("c/cryptopp.cpp"));
+    for flag in CXXFLAGS {
+        build.flag(flag);
+    }
+    let shim = command_line(&build);
+    build.compile("cryptopp_shim");
+    println!("cargo::rustc-link-search=native={}", dir.display());
+    println!("cargo::rustc-link-lib=static=cryptopp");
+
+    writeln!(info, "cryptopp: {}", src.display()).unwrap();
+    writeln!(info, "cryptopp build: make {}", make.join(" ")).unwrap();
+    for line in fs::read_to_string(&commands).unwrap_or_default().lines() {
+        writeln!(info, "cxxflags cryptopp: {line}").unwrap();
+    }
+    writeln!(info, "cxxflags cryptopp shim: {shim}").unwrap();
 }
 
 /// Builds `go/`, the cgo exports of go-krypto's LSH, as a static C archive

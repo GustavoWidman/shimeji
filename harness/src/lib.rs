@@ -4,6 +4,7 @@
 //! [`IMPLEMENTATIONS`] is the one list both the differential test and the
 //! benchmark iterate; adding an implementation means adding an entry here.
 
+mod cryptopp;
 mod gokrypto;
 mod kisa;
 
@@ -137,6 +138,12 @@ pub static IMPLEMENTATIONS: &[Implementation] = &[
     kisa::AVX2_256,
     #[cfg(kisa_avx2)]
     kisa::AVX2_512,
+    cryptopp::REF_256,
+    cryptopp::REF_512,
+    cryptopp::SSSE3_256,
+    cryptopp::SSSE3_512,
+    cryptopp::AVX2_256,
+    cryptopp::AVX2_512,
     #[cfg(target_arch = "aarch64")]
     gokrypto::NEON_256,
     #[cfg(target_arch = "aarch64")]
