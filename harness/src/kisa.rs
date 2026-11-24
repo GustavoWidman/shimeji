@@ -59,6 +59,7 @@ macro_rules! kisa {
                 family: Family::$family,
                 digest_lengths: Family::$family.digest_lengths(),
                 hash,
+                repeat: None,
                 available: $available,
             }
         };

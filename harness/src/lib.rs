@@ -66,6 +66,9 @@ impl Digest {
     }
 }
 
+/// Hashes a message a given number of times into an output slice.
+pub type Repeat = fn(&[u8], &mut [u8], u64);
+
 /// One implementation of one LSH family.
 pub struct Implementation {
     /// Name used in result files and on the command line, shared by an
@@ -77,6 +80,12 @@ pub struct Implementation {
     /// Writes the digest of the message into the output slice, whose length
     /// selects the digest length (one of `digest_lengths`).
     pub hash: fn(&[u8], &mut [u8]),
+    /// Hashes one message the given number of times in a loop inside the
+    /// implementation's own language, leaving the digest in the output
+    /// slice. The benchmark times this loop instead of calling
+    /// `hash` once per message, for implementations behind a foreign call
+    /// that costs as much as hashing a short message.
+    pub repeat: Option<Repeat>,
     /// Whether the running CPU can execute this implementation.
     pub available: fn() -> bool,
 }
@@ -98,6 +107,7 @@ pub static IMPLEMENTATIONS: &[Implementation] = &[
         family: Family::Lsh256,
         digest_lengths: Family::Lsh256.digest_lengths(),
         hash: shimeji_lsh256,
+        repeat: None,
         available: always,
     },
     Implementation {
@@ -105,6 +115,7 @@ pub static IMPLEMENTATIONS: &[Implementation] = &[
         family: Family::Lsh512,
         digest_lengths: Family::Lsh512.digest_lengths(),
         hash: shimeji_lsh512,
+        repeat: None,
         available: always,
     },
     kisa::REF_256,

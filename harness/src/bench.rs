@@ -120,7 +120,7 @@ pub fn main(args: &[String]) -> Result<(), String> {
     if let Some(imp) = selected.first() {
         let len = imp.digest_lengths[0];
         calibrate(
-            imp.hash,
+            imp,
             &input[..max.min(4096)],
             &mut digest_out[..len],
             WARMUP,
@@ -138,7 +138,7 @@ pub fn main(args: &[String]) -> Result<(), String> {
             let out_buf = &mut digest_out[..digest.len];
             let iters: Vec<u64> = imps
                 .iter()
-                .map(|imp| calibrate(imp.hash, message, out_buf, min_time))
+                .map(|imp| calibrate(imp, message, out_buf, min_time))
                 .collect();
             eprintln!(
                 "{} {len} bytes: {}",
@@ -154,7 +154,7 @@ pub fn main(args: &[String]) -> Result<(), String> {
                     _ => (0..imps.len()).rev().collect(),
                 };
                 for i in order {
-                    let elapsed = time(imps[i].hash, message, out_buf, iters[i]);
+                    let elapsed = time(imps[i], message, out_buf, iters[i]);
                     let core = platform::current_cpu();
                     let ns_per_message = elapsed.as_nanos() as f64 / iters[i] as f64;
                     writeln!(
@@ -174,22 +174,28 @@ pub fn main(args: &[String]) -> Result<(), String> {
     Ok(())
 }
 
-/// Times `iters` hashes of `message` in one loop.
+/// Times `iters` hashes of `message` in one loop: the implementation's own
+/// loop if it has one, otherwise a loop here calling `hash`.
 #[inline(never)]
-fn time(hash: fn(&[u8], &mut [u8]), message: &[u8], out: &mut [u8], iters: u64) -> Duration {
+fn time(imp: &Implementation, message: &[u8], out: &mut [u8], iters: u64) -> Duration {
     let start = Instant::now();
-    for _ in 0..iters {
-        black_box(hash)(black_box(message), black_box(&mut *out));
+    match imp.repeat {
+        Some(repeat) => black_box(repeat)(black_box(message), black_box(&mut *out), iters),
+        None => {
+            for _ in 0..iters {
+                black_box(imp.hash)(black_box(message), black_box(&mut *out));
+            }
+        }
     }
     start.elapsed()
 }
 
 /// The number of hashes for one loop to take at least `min`. The loops it
 /// times also warm caches and branch predictors.
-fn calibrate(hash: fn(&[u8], &mut [u8]), message: &[u8], out: &mut [u8], min: Duration) -> u64 {
+fn calibrate(imp: &Implementation, message: &[u8], out: &mut [u8], min: Duration) -> u64 {
     let mut iters = 1u64;
     loop {
-        let elapsed = time(hash, message, out, iters);
+        let elapsed = time(imp, message, out, iters);
         if elapsed >= min {
             return iters;
         }

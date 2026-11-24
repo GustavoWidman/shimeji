@@ -56,6 +56,11 @@ Crypto++ test vector, so this test is its only check.
   slow drift in clock speed falls on all of them alike.
 - the message, the output and the function pointer pass through
   `black_box`, so every hash is an opaque call whose result is used.
+- an entry may also have `repeat`, a loop in its own language that hashes
+  the message a given number of times; the benchmark then times that loop
+  instead of calling `hash` once per message. it is for code behind a
+  foreign call that costs as much as hashing a short message, such as Go
+  called through cgo. the differential test always uses `hash`.
 - on macOS the thread runs at user-interactive QoS and the core is recorded
   after each repetition; macOS cannot pin threads. on Linux, `--cpu N` pins
   the thread to CPU N and the core is recorded the same way.
