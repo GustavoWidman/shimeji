@@ -34,6 +34,21 @@ the C compiler and its flags are set in one place, `VARIANTS` and `CFLAGS` in
 `build.rs` writes the full command lines, with the rustc version, `RUSTFLAGS`
 and the release profile, to the header of every result file.
 
+go-krypto (https://github.com/RyuaNerin/go-krypto, Go with assembly) is
+pinned to v1.3.0 by `go/go.mod` and `go/go.sum`; the first build downloads
+it through the Go module proxy. it is built with Go 1.26, because its amd64
+assembly loads its IVs with aligned SSE instructions from Go slices that Go
+1.27 places at 8-byte alignment, which faults. `go/gokrypto.go` exports
+its `Sum224`, `Sum256`, `Sum384` and `Sum512` to C, and `build.rs` builds it
+with `go build -buildmode=c-archive` and links the archive. go-krypto picks
+its assembly from the CPU when the Go runtime starts, and each entry is named
+after the path it takes: `go-krypto-neon` on aarch64; on x86_64,
+`go-krypto-ssse3` (or `-sse2`) for LSH-256, whose AVX2 code go-krypto leaves
+disabled as slower, and `go-krypto-avx2` (or `-ssse3`, `-sse2`) for LSH-512.
+a call into Go through cgo costs tens of nanoseconds, so these entries hash in
+a loop inside Go when benchmarked (`repeat`, below). `build.rs` records the Go
+version, the go-krypto version and the build command in the result header.
+
 ## differential test
 
 `tests/differential.rs` hashes every message length from 0 to 3000 bytes,

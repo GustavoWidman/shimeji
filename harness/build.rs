@@ -100,7 +100,61 @@ fn main() {
             build.compile(&name);
         }
     }
+    gokrypto(&manifest, &out, &mut info);
     fs::write(out.join("build-info.txt"), info).unwrap();
+}
+
+/// Builds `go/`, the cgo exports of go-krypto's LSH, as a static C archive
+/// and links it. The go-krypto version is pinned by `go/go.mod` and
+/// `go/go.sum`.
+fn gokrypto(manifest: &Path, out: &Path, info: &mut String) {
+    let dir = manifest.join("go");
+    println!("cargo::rerun-if-changed={}", dir.display());
+    let lib = out.join("libgokrypto.a");
+    let args = [
+        "build",
+        "-buildmode=c-archive",
+        "-trimpath",
+        "-o",
+        lib.to_str().unwrap(),
+        ".",
+    ];
+    let env = [
+        ("CC", COMPILER),
+        ("CGO_ENABLED", "1"),
+        ("GOFLAGS", "-mod=readonly"),
+        ("GOTOOLCHAIN", "local"),
+    ];
+    let status = Command::new("go")
+        .args(args)
+        .envs(env)
+        .current_dir(&dir)
+        .status()
+        .expect("go is not on PATH; run cargo from `nix develop`");
+    assert!(status.success(), "go build failed");
+    println!("cargo::rustc-link-search=native={}", out.display());
+    println!("cargo::rustc-link-lib=static=gokrypto");
+
+    let module = Command::new("go")
+        .args(["list", "-m", "github.com/RyuaNerin/go-krypto"])
+        .current_dir(&dir)
+        .output()
+        .unwrap();
+    writeln!(info, "go: {}", first_line("go", &["version"])).unwrap();
+    writeln!(
+        info,
+        "go-krypto: {}",
+        String::from_utf8_lossy(&module.stdout).trim()
+    )
+    .unwrap();
+    let env: Vec<_> = env.iter().map(|(k, v)| format!("{k}={v}")).collect();
+    writeln!(
+        info,
+        "go build: {} go {}",
+        env.join(" "),
+        args[..3].join(" ")
+    )
+    .unwrap();
 }
 
 fn first_line(program: &str, args: &[&str]) -> String {

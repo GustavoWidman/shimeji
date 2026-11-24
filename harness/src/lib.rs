@@ -4,6 +4,7 @@
 //! [`IMPLEMENTATIONS`] is the one list both the differential test and the
 //! benchmark iterate; adding an implementation means adding an entry here.
 
+mod gokrypto;
 mod kisa;
 
 use shimeji::{Lsh256_224, Lsh256_256, Lsh512_224, Lsh512_256, Lsh512_384, Lsh512_512};
@@ -136,6 +137,20 @@ pub static IMPLEMENTATIONS: &[Implementation] = &[
     kisa::AVX2_256,
     #[cfg(kisa_avx2)]
     kisa::AVX2_512,
+    #[cfg(target_arch = "aarch64")]
+    gokrypto::NEON_256,
+    #[cfg(target_arch = "aarch64")]
+    gokrypto::NEON_512,
+    #[cfg(target_arch = "x86_64")]
+    gokrypto::SSE2_256,
+    #[cfg(target_arch = "x86_64")]
+    gokrypto::SSSE3_256,
+    #[cfg(target_arch = "x86_64")]
+    gokrypto::SSE2_512,
+    #[cfg(target_arch = "x86_64")]
+    gokrypto::SSSE3_512,
+    #[cfg(target_arch = "x86_64")]
+    gokrypto::AVX2_512,
 ];
 
 /// The implementations the running CPU can execute.
