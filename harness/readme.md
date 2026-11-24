@@ -24,7 +24,11 @@ everywhere, `neon` on aarch64, `sse2`, `ssse3` and `avx2` on x86_64. KISA's
 every KISA variant defines the same four functions. `build.rs` compiles each
 variant from a generated file that renames them with `#define` to
 `kisa_<variant>_lsh256_digest` and so on, then includes the vendored
-`lsh-impl.c` unchanged. clang rejects KISA's LSH-512 NEON code, which passes a
+`lsh-impl.c` unchanged, and adds `kisa_<variant>_lsh256_repeat` (and the
+LSH-512 one), which calls the digest function a given number of times. the
+benchmark times that loop (`repeat`, below): calling KISA's code once per
+64-byte message from Rust, through a buffer aligned for its SIMD variants,
+adds 1-6% to its time on an Apple M6 and an Intel i9-13900K. clang rejects KISA's LSH-512 NEON code, which passes a
 shift count to an immediate-operand intrinsic through an inline function;
 `c/neon_imm.h` turns those intrinsics into switches that fold to the same
 `shl` and `sri` instructions GCC emits.

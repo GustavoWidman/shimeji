@@ -4,7 +4,9 @@
 //! `_final`, `_digest`, or their `lsh512_` counterparts). Each variant is built
 //! from a generated translation unit that renames them with `#define` to
 //! `kisa_<variant>_<function>` and then includes the vendored `lsh-impl.c`
-//! unchanged, so every variant links side by side.
+//! unchanged, so every variant links side by side. After it the unit defines
+//! `lsh256_repeat` (or `lsh512_repeat`), which calls `_digest` a given number
+//! of times: the loop the benchmark times.
 //!
 //! The flags below, and the full compiler command line `cc` derives from them,
 //! are written to `$OUT_DIR/build-info.txt`, which the benchmark copies into
@@ -31,7 +33,7 @@ const VARIANTS: &[(&str, Option<&str>, &[&str])] = &[
 ];
 
 const FAMILIES: &[&str] = &["lsh256", "lsh512"];
-const FUNCTIONS: &[&str] = &["init", "update", "final", "digest"];
+const FUNCTIONS: &[&str] = &["init", "update", "final", "digest", "repeat"];
 const COMPILER: &str = "clang";
 
 fn main() {
@@ -83,6 +85,16 @@ fn main() {
                 writeln!(unit, "#include \"{}\"", neon_imm.display()).unwrap();
             }
             writeln!(unit, "#include \"{}\"", dir.join("lsh-impl.c").display()).unwrap();
+            writeln!(
+                unit,
+                "lsh_err {family}_repeat(const lsh_type algtype, const lsh_u8 *data, \
+                 size_t databitlen, lsh_u8 *hashval, unsigned long long iters) {{\n\
+                 \tlsh_err err = LSH_SUCCESS;\n\
+                 \tfor (unsigned long long i = 0; i < iters && err == LSH_SUCCESS; i++)\n\
+                 \t\terr = {family}_digest(algtype, data, databitlen, hashval);\n\
+                 \treturn err;\n}}"
+            )
+            .unwrap();
             let file = out.join(format!("{name}.c"));
             fs::write(&file, unit).unwrap();
 
