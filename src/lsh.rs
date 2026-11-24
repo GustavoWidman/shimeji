@@ -118,6 +118,23 @@ macro_rules! lsh {
             }
         }
 
+        /// Pads the message's last, partial block `rest`, absorbs it and
+        /// returns the digest.
+        ///
+        /// LSH appends a single `0x80` byte and zeros, with no length field,
+        /// and always ends with this padded block.
+        fn finish<const N: usize>(mut cv: [$w; 16], rest: &[u8]) -> [u8; N] {
+            let mut last = [0u8; BLOCK];
+            last[..rest.len()].copy_from_slice(rest);
+            last[rest.len()] = 0x80;
+            compress(&mut cv, &last, sc());
+            let mut h = [0u8; 8 * WORD];
+            for k in 0..8 {
+                h[WORD * k..WORD * (k + 1)].copy_from_slice(&(cv[k] ^ cv[k + 8]).to_le_bytes());
+            }
+            h[..N].try_into().unwrap()
+        }
+
         $(#[$doc])*
         #[derive(Clone)]
         pub struct $hasher<const N: usize> {
@@ -160,18 +177,8 @@ macro_rules! lsh {
             }
 
             /// Pads the last block, absorbs it and returns the digest.
-            ///
-            /// LSH appends a single `0x80` byte and zeros, with no length field,
-            /// and always ends with this padded block.
-            pub fn finalize(mut self) -> [u8; N] {
-                self.buf[self.len] = 0x80;
-                self.buf[self.len + 1..].fill(0);
-                compress(&mut self.cv, &self.buf, sc());
-                let mut h = [0u8; 8 * WORD];
-                for k in 0..8 {
-                    h[WORD * k..WORD * (k + 1)].copy_from_slice(&(self.cv[k] ^ self.cv[k + 8]).to_le_bytes());
-                }
-                h[..N].try_into().unwrap()
+            pub fn finalize(self) -> [u8; N] {
+                finish(self.cv, &self.buf[..self.len])
             }
 
             /// Hashes `data` in one call.
