@@ -38,6 +38,10 @@
             rustc
             rustfmt
             clang
+            # go-krypto's amd64 assembly reads its IVs with aligned SSE loads
+            # from Go slices; Go 1.27 places those slices' arrays at 8-byte
+            # alignment and the loads fault. Go 1.26 aligns them.
+            go_1_26
             typst
           ];
         };
