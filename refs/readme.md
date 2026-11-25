@@ -20,3 +20,8 @@ against `SHA256SUMS`. nothing here is compiled into the crate.
   upstream file names. its XOP variant, which needs AMD XOP hardware, and
   its benchmark drivers are not fetched. the code is copyright 2019
   JuYoungjin under the MIT license in `lsh-simd/LICENSE`.
+- `pbkdf2-lsh/` is not in the repository. `harness/build.rs` downloads Choi
+  and Seo's SSE2 LSH-256 there from
+  https://github.com/ondoli0312/PBKDF2-HMAC-LSH256 at a pinned commit and
+  checks it against pinned SHA-256 digests; that repository has no license,
+  so its code is fetched for each build instead of kept here.

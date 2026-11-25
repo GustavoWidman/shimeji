@@ -113,6 +113,7 @@ fn main() {
         }
     }
     lsh_simd(root, &out, &arch, &mut info);
+    pbkdf2_lsh(root, &out, &arch, &mut info);
     cryptopp(&manifest, &out, &mut info);
     gokrypto(&manifest, &out, &mut info);
     fs::write(out.join("build-info.txt"), info).unwrap();
@@ -177,6 +178,121 @@ fn lsh_simd(root: &Path, out: &Path, arch: &str, info: &mut String) {
             build.compile(&name);
         }
     }
+}
+
+/// Choi and Seo's PBKDF2-HMAC-LSH256 code, whose repository has no license
+/// and so is not part of this one: the commit, and the files its SSE2 LSH-256
+/// needs with their SHA-256 digests.
+const PBKDF2_LSH_URL: &str = "https://raw.githubusercontent.com/ondoli0312/PBKDF2-HMAC-LSH256/be7026c11701490b7219353d1289b480efccb9da";
+const PBKDF2_LSH_FILES: &[(&str, &str)] = &[
+    (
+        "Type.h",
+        "640503e3c948c958f17f37cce2032fdadd8d3025da8e240ac1f21332f9488a62",
+    ),
+    (
+        "LSH256.h",
+        "bfb515875a2709fcba9ad18628f890054095c73cb56aa37573aaaced429314a3",
+    ),
+    (
+        "SIMD_LSH_256.c",
+        "bddf60513f0b9e00cfb027d6c82f965360262f227f794b910bafc2e51cee5525",
+    ),
+];
+
+/// Downloads Choi and Seo's SSE2 LSH-256 into `refs/pbkdf2-lsh`, which git
+/// ignores, unless the files there already have the pinned digests, and
+/// compiles `SIMD_LSH_256.c` with KISA's flags and `-fms-extensions`, for its
+/// `__declspec(align)` and `__int64`. `LSH256.h` declares `SIMD_Compression`
+/// with one parameter and `SIMD_LSH_256.c` defines it with two, which C
+/// rejects, so the generated unit first includes the header with that
+/// declaration renamed; its `#pragma once` then skips the `.c` file's
+/// include. The unit adds `pbkdf2_lsh_sse2_lsh256_repeat`, which calls
+/// `SIMD_LSH256` a given number of times.
+fn pbkdf2_lsh(root: &Path, out: &Path, arch: &str, info: &mut String) {
+    if arch != "x86_64" {
+        return;
+    }
+    let dir = root.join("refs/pbkdf2-lsh");
+    println!("cargo::rerun-if-changed={}", dir.display());
+    fs::create_dir_all(&dir).unwrap();
+    for &(file, digest) in PBKDF2_LSH_FILES {
+        let path = dir.join(file);
+        if path.exists() && sha256(&path) == digest {
+            continue;
+        }
+        let url = format!("{PBKDF2_LSH_URL}/{file}");
+        let partial = dir.join(format!("{file}.part"));
+        let fetched = Command::new("curl")
+            .args(["-fsSL", "--retry", "3", "-o"])
+            .arg(&partial)
+            .arg(&url)
+            .status()
+            .is_ok_and(|status| status.success());
+        assert!(
+            fetched,
+            "cannot download {url}. Choi and Seo's PBKDF2-HMAC-LSH256 code has no \
+             license and is not in this repository; build.rs downloads it with \
+             curl. Place {} from that commit in {} to build offline.",
+            PBKDF2_LSH_FILES
+                .iter()
+                .map(|(file, _)| *file)
+                .collect::<Vec<_>>()
+                .join(", "),
+            dir.display()
+        );
+        let got = sha256(&partial);
+        assert_eq!(got, digest, "{url} does not have the pinned SHA-256");
+        fs::rename(&partial, &path).unwrap();
+    }
+
+    let mut unit = String::new();
+    writeln!(
+        unit,
+        "#define SIMD_Compression pbkdf2_lsh_unused_declaration\n\
+         #include \"{header}\"\n\
+         #undef SIMD_Compression\n\
+         #include \"{source}\"\n\
+         void pbkdf2_lsh_sse2_lsh256_repeat(const byte *msg, word msg_len, byte *output, \
+         unsigned long long iters) {{\n\
+         \tfor (unsigned long long i = 0; i < iters; i++)\n\
+         \t\tSIMD_LSH256(msg, msg_len, output);\n}}",
+        header = dir.join("LSH256.h").display(),
+        source = dir.join("SIMD_LSH_256.c").display(),
+    )
+    .unwrap();
+    let file = out.join("pbkdf2_lsh_sse2.c");
+    fs::write(&file, unit).unwrap();
+
+    let mut build = cc::Build::new();
+    build
+        .compiler(COMPILER)
+        .no_default_flags(true)
+        .warnings(false)
+        .file(&file);
+    for flag in CFLAGS.iter().chain(&["-msse2", "-fms-extensions"]) {
+        build.flag(flag);
+    }
+    writeln!(info, "pbkdf2-lsh: {PBKDF2_LSH_URL}").unwrap();
+    writeln!(
+        info,
+        "cflags pbkdf2-lsh-sse2 lsh256: {}",
+        command_line(&build)
+    )
+    .unwrap();
+    build.compile("pbkdf2_lsh_sse2");
+}
+
+/// The SHA-256 of a file, in hex, from `shasum`, which `refs/fetch.sh` also
+/// uses.
+fn sha256(path: &Path) -> String {
+    let output = Command::new("shasum")
+        .args(["-a", "256"])
+        .arg(path)
+        .output()
+        .expect("shasum is not on PATH");
+    assert!(output.status.success(), "shasum {}", path.display());
+    let line = String::from_utf8(output.stdout).unwrap();
+    line.split_whitespace().next().unwrap().to_owned()
 }
 
 /// Flags Crypto++ and the shim around it are compiled with: KISA's flags, and

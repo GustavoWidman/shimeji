@@ -52,6 +52,20 @@ Rust, the code takes 1-1.5% longer on an i9-13900K. for every digest but
 LSH-256-256 and LSH-512-512, this code derives the IV for each message by
 running the step functions without a message, where KISA's code stores it.
 
+`pbkdf2-lsh-sse2`, on x86_64, is the SSE2 LSH-256 that Choi and Seo wrote
+for their PBKDF2-HMAC-LSH256 (https://github.com/ondoli0312/PBKDF2-HMAC-LSH256,
+`SIMD_LSH_256.c`); the copies of KISA's code in that repository are not
+registered. it computes LSH-256-256 only. the repository has no license, so
+its code is not in this one: `build.rs` downloads the three files it needs
+at a pinned commit with `curl` into `refs/pbkdf2-lsh/`, which git ignores,
+checks each against a pinned SHA-256, and stops with a message naming the
+files if it cannot. it is compiled with KISA's flags plus `-msse2` and
+`-fms-extensions`, which the code's `__declspec(align)` and `__int64` need,
+from a generated unit that works around a prototype in `LSH256.h` that
+disagrees with the definition, and the benchmark times a C loop around it,
+as for `lsh-simd`: called once per 64-byte message from Rust it takes 1.7%
+longer on an i9-13900K.
+
 Crypto++ (https://github.com/weidai11/cryptopp) is built from the commit
 `flake.nix` pins, the one `refs/fetch.sh` takes the test vectors from, with
 its own GNUmakefile, the same clang as KISA's code and `-O3 -fPIC -DNDEBUG`;
