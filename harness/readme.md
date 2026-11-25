@@ -41,6 +41,17 @@ the C compiler and its flags are set in one place, `VARIANTS` and `CFLAGS` in
 `build.rs` writes the full command lines, with the rustc version, `RUSTFLAGS`
 and the release profile, to the header of every result file.
 
+on x86_64 it also holds the SSE2, SSSE3 and AVX2 code of Kim, Jung, Ju and
+Song, "Fast Implementation of LSH With SIMD" (IEEE Access, 2019), from
+`refs/lsh-simd`: `lsh-simd-sse2`, `lsh-simd-ssse3` and `lsh-simd-avx2`, each
+with all six digests. its variants also share function names, so `build.rs`
+compiles them the same way as KISA's, renamed to `lsh_simd_<variant>_*`,
+with the same clang and flags, and with a C loop around `Hash256` or
+`Hash512` that the benchmark times: called once per 64-byte message from
+Rust, the code takes 1-1.5% longer on an i9-13900K. for every digest but
+LSH-256-256 and LSH-512-512, this code derives the IV for each message by
+running the step functions without a message, where KISA's code stores it.
+
 Crypto++ (https://github.com/weidai11/cryptopp) is built from the commit
 `flake.nix` pins, the one `refs/fetch.sh` takes the test vectors from, with
 its own GNUmakefile, the same clang as KISA's code and `-O3 -fPIC -DNDEBUG`;

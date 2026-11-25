@@ -35,6 +35,8 @@ mod cryptopp;
 mod gokrypto;
 mod kisa;
 #[cfg(target_arch = "x86_64")]
+mod lshsimd;
+#[cfg(target_arch = "x86_64")]
 mod x86;
 
 /// Bytes the build script recorded about how this crate and KISA's code were
@@ -189,6 +191,18 @@ pub static IMPLEMENTATIONS: &[Implementation] = &[
     kisa::AVX2_256,
     #[cfg(kisa_avx2)]
     kisa::AVX2_512,
+    #[cfg(target_arch = "x86_64")]
+    lshsimd::SSE2_256,
+    #[cfg(target_arch = "x86_64")]
+    lshsimd::SSE2_512,
+    #[cfg(target_arch = "x86_64")]
+    lshsimd::SSSE3_256,
+    #[cfg(target_arch = "x86_64")]
+    lshsimd::SSSE3_512,
+    #[cfg(target_arch = "x86_64")]
+    lshsimd::AVX2_256,
+    #[cfg(target_arch = "x86_64")]
+    lshsimd::AVX2_512,
     cryptopp::REF_256,
     cryptopp::REF_512,
     cryptopp::SSSE3_256,

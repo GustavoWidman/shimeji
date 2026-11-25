@@ -112,9 +112,71 @@ fn main() {
             build.compile(&name);
         }
     }
+    lsh_simd(root, &out, &arch, &mut info);
     cryptopp(&manifest, &out, &mut info);
     gokrypto(&manifest, &out, &mut info);
     fs::write(out.join("build-info.txt"), info).unwrap();
+}
+
+/// Variants of Kim, Jung, Ju and Song's SIMD LSH code in `refs/lsh-simd`,
+/// all for x86-64: name, the upstream directory name that its file names
+/// carry, and its instruction-set flags.
+const LSH_SIMD: &[(&str, &str, &[&str])] = &[
+    ("sse2", "SSE2", &["-msse2"]),
+    ("ssse3", "SSSE3", &["-mssse3"]),
+    ("avx2", "AVX2", &["-mavx2"]),
+];
+
+/// Compiles each `refs/lsh-simd` variant as KISA's code is compiled: every
+/// variant defines the same `compress256`, `Init256`, `Update256`, `Final256`
+/// and `Hash256` (or their `512` counterparts), so a generated unit renames
+/// them to `lsh_simd_<variant>_lsh256_<function>`, includes the vendored file
+/// unchanged, and defines `lsh_simd_<variant>_lsh256_repeat`, which calls
+/// `Hash256` a given number of times.
+fn lsh_simd(root: &Path, out: &Path, arch: &str, info: &mut String) {
+    if arch != "x86_64" {
+        return;
+    }
+    let refs = root.join("refs/lsh-simd");
+    println!("cargo::rerun-if-changed={}", refs.display());
+    for &(variant, upstream, flags) in LSH_SIMD {
+        for bits in [256, 512] {
+            let name = format!("lsh_simd_{variant}_lsh{bits}");
+            let mut unit = String::new();
+            for function in ["compress", "Init", "Update", "Final", "Hash"] {
+                writeln!(unit, "#define {function}{bits} {name}_{function}").unwrap();
+            }
+            let source = refs
+                .join(variant)
+                .join(format!("lsh{bits}_ref_{upstream}_OPT.c"));
+            writeln!(unit, "#include \"{}\"", source.display()).unwrap();
+            writeln!(
+                unit,
+                "int {name}_repeat(int hashbitlen, const Byte *data, DataLength databitlen, \
+                 Byte *hashval, unsigned long long iters) {{\n\
+                 \tint err = SUCCESS;\n\
+                 \tfor (unsigned long long i = 0; i < iters && err == SUCCESS; i++)\n\
+                 \t\terr = Hash{bits}(hashbitlen, data, databitlen, hashval);\n\
+                 \treturn err;\n}}"
+            )
+            .unwrap();
+            let file = out.join(format!("{name}.c"));
+            fs::write(&file, unit).unwrap();
+
+            let mut build = cc::Build::new();
+            build
+                .compiler(COMPILER)
+                .no_default_flags(true)
+                .warnings(false)
+                .file(&file);
+            for flag in CFLAGS.iter().chain(flags) {
+                build.flag(flag);
+            }
+            let args = command_line(&build);
+            writeln!(info, "cflags lsh-simd-{variant} lsh{bits}: {args}").unwrap();
+            build.compile(&name);
+        }
+    }
 }
 
 /// Flags Crypto++ and the shim around it are compiled with: KISA's flags, and
