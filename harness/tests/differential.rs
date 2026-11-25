@@ -18,9 +18,10 @@ fn lengths() -> impl Iterator<Item = usize> {
     (0..=3000).chain(LONG)
 }
 
-fn shimeji(family: Family) -> &'static Implementation {
+/// shimeji's portable code, which every other entry is compared with.
+fn portable(family: Family) -> &'static Implementation {
     implementations()
-        .find(|imp| imp.name == "shimeji" && imp.family == family)
+        .find(|imp| imp.name == "shimeji-portable" && imp.family == family)
         .unwrap()
 }
 
@@ -29,7 +30,7 @@ fn every_digest_has_an_independent_implementation() {
     for digest in Digest::all() {
         assert!(
             implementations()
-                .any(|imp| imp.name != "shimeji" && imp.digests().any(|d| d == digest)),
+                .any(|imp| !imp.name.starts_with("shimeji") && imp.digests().any(|d| d == digest)),
             "nothing to compare {} against",
             digest.name()
         );
@@ -37,7 +38,7 @@ fn every_digest_has_an_independent_implementation() {
 }
 
 #[test]
-fn every_implementation_matches_shimeji() {
+fn every_implementation_matches_portable() {
     let mut rng = Rng::new(0x5348_494d_454a_4931);
     let mut buf = vec![0u8; (1 << 20) + 64];
     let mut mismatches = Vec::new();
@@ -47,8 +48,8 @@ fn every_implementation_matches_shimeji() {
         let message = &mut buf[offset..offset + len];
         rng.fill(message);
         let message = &*message;
-        for imp in implementations().filter(|imp| imp.name != "shimeji") {
-            let reference = shimeji(imp.family);
+        for imp in implementations().filter(|imp| imp.name != "shimeji-portable") {
+            let reference = portable(imp.family);
             for digest in imp.digests() {
                 let mut want = [0u8; 64];
                 let mut got = [0u8; 64];

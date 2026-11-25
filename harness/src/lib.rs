@@ -4,11 +4,38 @@
 //! [`IMPLEMENTATIONS`] is the one list both the differential test and the
 //! benchmark iterate; adding an implementation means adding an entry here.
 
+/// Defines `hash` functions for an LSH-256 and an LSH-512 entry from a
+/// shimeji method that returns the digest, or an `Option` of it (`unwrap`ped)
+/// for code paths the CPU may lack.
+macro_rules! shimeji_hash {
+    ($lsh256:ident, $lsh512:ident, $method:ident $(, $unwrap:ident)?) => {
+        fn $lsh256(message: &[u8], out: &mut [u8]) {
+            use shimeji::{Lsh256_224, Lsh256_256};
+            match out.len() {
+                28 => out.copy_from_slice(&Lsh256_224::$method(message)$(.$unwrap())?),
+                32 => out.copy_from_slice(&Lsh256_256::$method(message)$(.$unwrap())?),
+                len => panic!("LSH-256 has no {len}-byte digest"),
+            }
+        }
+
+        fn $lsh512(message: &[u8], out: &mut [u8]) {
+            use shimeji::{Lsh512_224, Lsh512_256, Lsh512_384, Lsh512_512};
+            match out.len() {
+                28 => out.copy_from_slice(&Lsh512_224::$method(message)$(.$unwrap())?),
+                32 => out.copy_from_slice(&Lsh512_256::$method(message)$(.$unwrap())?),
+                48 => out.copy_from_slice(&Lsh512_384::$method(message)$(.$unwrap())?),
+                64 => out.copy_from_slice(&Lsh512_512::$method(message)$(.$unwrap())?),
+                len => panic!("LSH-512 has no {len}-byte digest"),
+            }
+        }
+    };
+}
+
 mod cryptopp;
 mod gokrypto;
 mod kisa;
-
-use shimeji::{Lsh256_224, Lsh256_256, Lsh512_224, Lsh512_256, Lsh512_384, Lsh512_512};
+#[cfg(target_arch = "x86_64")]
+mod x86;
 
 /// Bytes the build script recorded about how this crate and KISA's code were
 /// compiled, one `key: value` per line.
@@ -120,6 +147,30 @@ pub static IMPLEMENTATIONS: &[Implementation] = &[
         repeat: None,
         available: always,
     },
+    Implementation {
+        name: "shimeji-portable",
+        family: Family::Lsh256,
+        digest_lengths: Family::Lsh256.digest_lengths(),
+        hash: portable_lsh256,
+        available: always,
+        repeat: None,
+    },
+    Implementation {
+        name: "shimeji-portable",
+        family: Family::Lsh512,
+        digest_lengths: Family::Lsh512.digest_lengths(),
+        hash: portable_lsh512,
+        available: always,
+        repeat: None,
+    },
+    #[cfg(target_arch = "x86_64")]
+    x86::SSSE3_256,
+    #[cfg(target_arch = "x86_64")]
+    x86::SSSE3_512,
+    #[cfg(target_arch = "x86_64")]
+    x86::AVX2_256,
+    #[cfg(target_arch = "x86_64")]
+    x86::AVX2_512,
     kisa::REF_256,
     kisa::REF_512,
     #[cfg(kisa_neon)]
@@ -169,23 +220,8 @@ fn always() -> bool {
     true
 }
 
-fn shimeji_lsh256(message: &[u8], out: &mut [u8]) {
-    match out.len() {
-        28 => out.copy_from_slice(&Lsh256_224::digest(message)),
-        32 => out.copy_from_slice(&Lsh256_256::digest(message)),
-        len => panic!("LSH-256 has no {len}-byte digest"),
-    }
-}
-
-fn shimeji_lsh512(message: &[u8], out: &mut [u8]) {
-    match out.len() {
-        28 => out.copy_from_slice(&Lsh512_224::digest(message)),
-        32 => out.copy_from_slice(&Lsh512_256::digest(message)),
-        48 => out.copy_from_slice(&Lsh512_384::digest(message)),
-        64 => out.copy_from_slice(&Lsh512_512::digest(message)),
-        len => panic!("LSH-512 has no {len}-byte digest"),
-    }
-}
+shimeji_hash!(shimeji_lsh256, shimeji_lsh512, digest);
+shimeji_hash!(portable_lsh256, portable_lsh512, digest_portable);
 
 /// SplitMix64: the deterministic generator behind test messages, benchmark
 /// inputs and bootstrap resampling.

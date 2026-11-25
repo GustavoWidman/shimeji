@@ -17,9 +17,12 @@ hashes a message into an output slice whose length selects the digest, and a
 check that the running CPU can execute it. the test and the benchmark iterate
 the registry and name no implementation, so a new backend is one more entry.
 
-it holds shimeji's portable code and KISA's C code from `refs/kisa`: `ref`
-everywhere, `neon` on aarch64, `sse2`, `ssse3` and `avx2` on x86_64. KISA's
-`xop` variant needs AMD XOP hardware and is not built.
+it holds shimeji's code and KISA's C code from `refs/kisa`: `ref` everywhere,
+`neon` on aarch64, `sse2`, `ssse3` and `avx2` on x86_64. `shimeji` is what
+`digest` runs, the fastest code the CPU supports; `shimeji-portable` is the
+portable code alone. on x86_64, `shimeji-ssse3` and `shimeji-avx2` call each
+one-message SIMD kernel directly, whatever `digest` would pick.
+KISA's `xop` variant needs AMD XOP hardware and is not built.
 
 every KISA variant defines the same four functions. `build.rs` compiles each
 variant from a generated file that renames them with `#define` to
@@ -70,7 +73,7 @@ version, the go-krypto version and the build command in the result header.
 
 `tests/differential.rs` hashes every message length from 0 to 3000 bytes,
 plus lengths around 64 KiB and 1 MiB, with every registry entry and all six
-digests, and requires each digest to equal shimeji's portable code. messages
+digests, and requires each digest to equal `shimeji-portable`'s. messages
 come from a fixed seed and start at varying offsets. LSH-512-224 has no
 Crypto++ test vector, so this test is its only check.
 
