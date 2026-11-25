@@ -13,3 +13,10 @@ against `SHA256SUMS`. nothing here is compiled into the crate.
   (https://github.com/weidai11/cryptopp, `TestVectors/`): LSH-256-224,
   LSH-256-256, LSH-512-384, LSH-512-512 and LSH-512-256. Crypto++ places
   its individual files in the public domain.
+- `lsh-simd/` is the code of Kim, Jung, Ju and Song, "Fast Implementation
+  of LSH With SIMD", IEEE Access 7 (2019)
+  (https://github.com/JuYoungjin/LSH-SIMD-Implementation): LSH-256 and
+  LSH-512 with SSE2, SSSE3 and AVX2, one directory each, keeping the
+  upstream file names. its XOP variant, which needs AMD XOP hardware, and
+  its benchmark drivers are not fetched. the code is copyright 2019
+  JuYoungjin under the MIT license in `lsh-simd/LICENSE`.
