@@ -98,10 +98,26 @@ Crypto++ test vector, so this test is its only check.
   the thread to CPU N and the core is recorded the same way.
 
 each repetition is one row: implementation, digest, length, repetition,
-ns per byte, ns per message, CPU, host. comment lines above the rows record
-host, OS, CPU model, git commit, command line, method and build flags.
+ns per byte, ns per message, cycles per byte, retired instructions per byte,
+CPU, host. comment lines above the rows record host, OS, CPU model, git
+commit, command line, method, how cycles and instructions were counted, and
+build flags.
+
+cycles and instructions are read from the hardware counters of the
+benchmark's thread just before and after each timed loop:
+
+- on Linux, with `perf_event_open`: the generic cycle and instruction events
+  as one group, user mode only. a repetition whose counters did not run for
+  the whole loop (multiplexed, or on a core whose PMU lacks them) gets empty
+  columns.
+- on macOS, with `thread_selfcounts`, which returns the core's fixed cycle
+  and instruction counters as accumulated for the calling thread. it needs
+  no privileges and counts user and kernel mode.
+
+where neither works, the columns are empty and the header says why.
 
 `summary` prints, per digest, length and implementation, the median with a
-95% bootstrap interval and the speedup over `--baseline` (default `kisa-ref`).
+95% bootstrap interval, the median cycles and instructions per byte, and the
+speedup over `--baseline` (default `kisa-ref`).
 `--cpus 6,7` keeps only repetitions that ended on those cores, to drop runs
 that migrated between core clusters.

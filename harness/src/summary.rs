@@ -3,7 +3,8 @@
 //! the speedup over a baseline implementation (baseline median divided by
 //! this median) with its own bootstrap interval, resampling both series
 //! independently. The bootstrap is seeded, so the same file always gives the
-//! same summary.
+//! same summary. Next to the time it prints the median cycles and retired
+//! instructions per byte, when the file has them.
 
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
@@ -12,15 +13,16 @@ use harness::Rng;
 
 use crate::{options, parse_list};
 
-const COLUMNS: [&str; 8] = [
+/// Columns `summary` reads. Files written before the benchmark recorded
+/// counters lack the last two.
+const COLUMNS: [&str; 7] = [
     "implementation",
     "digest",
     "length",
-    "repetition",
-    "ns_per_byte",
     "ns_per_message",
     "cpu",
-    "host",
+    "cycles_per_byte",
+    "instructions_per_byte",
 ];
 
 struct Row {
@@ -29,12 +31,16 @@ struct Row {
     length: usize,
     ns_per_message: f64,
     cpu: usize,
+    cycles_per_byte: Option<f64>,
+    instructions_per_byte: Option<f64>,
 }
 
 /// The repetitions of one implementation in one (digest, length) cell.
 struct Series {
     implementation: String,
     ns_per_message: Vec<f64>,
+    cycles_per_byte: Vec<f64>,
+    instructions_per_byte: Vec<f64>,
     cpus: BTreeSet<usize>,
 }
 
@@ -81,7 +87,7 @@ pub fn main(args: &[String]) -> Result<(), String> {
     .unwrap();
     writeln!(
         out,
-        "{:<11} {:>8} {:<12} {:>3} {:>9} {:>21} {:>12} {:>7} {:>21}  cpus",
+        "{:<11} {:>8} {:<12} {:>3} {:>9} {:>21} {:>12} {:>9} {:>9} {:>7} {:>21}  cpus",
         "digest",
         "length",
         "impl",
@@ -89,6 +95,8 @@ pub fn main(args: &[String]) -> Result<(), String> {
         "ns/byte",
         "95% interval",
         "ns/message",
+        "cyc/byte",
+        "ins/byte",
         "speedup",
         "95% interval"
     )
@@ -125,7 +133,7 @@ pub fn main(args: &[String]) -> Result<(), String> {
             };
             writeln!(
                 out,
-                "{:<11} {:>8} {:<12} {:>3} {:>9.4} {:>21} {:>12.1} {speedup}  {}",
+                "{:<11} {:>8} {:<12} {:>3} {:>9.4} {:>21} {:>12.1} {:>9} {:>9} {speedup}  {}",
                 cell.digest,
                 cell.length,
                 series.implementation,
@@ -133,6 +141,8 @@ pub fn main(args: &[String]) -> Result<(), String> {
                 med / len,
                 format!("[{:.4}, {:.4}]", lo / len, hi / len),
                 med,
+                median_or_dash(&series.cycles_per_byte),
+                median_or_dash(&series.instructions_per_byte),
                 cpus.join(","),
             )
             .unwrap();
@@ -147,22 +157,33 @@ fn parse(text: &str) -> Result<Vec<Row>, String> {
         .lines()
         .filter(|line| !line.starts_with('#') && !line.is_empty());
     let header: Vec<&str> = lines.next().ok_or("no header row")?.split('\t').collect();
-    if header != COLUMNS {
-        return Err(format!("unexpected columns {header:?}, want {COLUMNS:?}"));
-    }
+    let column = |name: &str| header.iter().position(|&h| h == name);
+    let [implementation, digest, length, ns_per_message, cpu] = COLUMNS[..5]
+        .iter()
+        .map(|&name| column(name).ok_or(format!("no column {name} in {header:?}")))
+        .collect::<Result<Vec<_>, _>>()?
+        .try_into()
+        .unwrap();
+    let (cycles, instructions) = (column(COLUMNS[5]), column(COLUMNS[6]));
     lines
         .map(|line| {
             let fields: Vec<&str> = line.split('\t').collect();
             let bad = || format!("bad row: {line}");
-            if fields.len() != COLUMNS.len() {
+            if fields.len() != header.len() {
                 return Err(bad());
             }
+            let counter = |i: Option<usize>| match i.map(|i| fields[i]) {
+                None | Some("") => Ok(None),
+                Some(field) => field.parse().map(Some).map_err(|_| bad()),
+            };
             Ok(Row {
-                implementation: fields[0].to_owned(),
-                digest: fields[1].to_owned(),
-                length: fields[2].parse().map_err(|_| bad())?,
-                ns_per_message: fields[5].parse().map_err(|_| bad())?,
-                cpu: fields[6].parse().map_err(|_| bad())?,
+                implementation: fields[implementation].to_owned(),
+                digest: fields[digest].to_owned(),
+                length: fields[length].parse().map_err(|_| bad())?,
+                ns_per_message: fields[ns_per_message].parse().map_err(|_| bad())?,
+                cpu: fields[cpu].parse().map_err(|_| bad())?,
+                cycles_per_byte: counter(cycles)?,
+                instructions_per_byte: counter(instructions)?,
             })
         })
         .collect()
@@ -196,12 +217,18 @@ fn cells(rows: Vec<Row>) -> Vec<Cell> {
                 cell.series.push(Series {
                     implementation: row.implementation.clone(),
                     ns_per_message: Vec::new(),
+                    cycles_per_byte: Vec::new(),
+                    instructions_per_byte: Vec::new(),
                     cpus: BTreeSet::new(),
                 });
                 cell.series.last_mut().unwrap()
             }
         };
         series.ns_per_message.push(row.ns_per_message);
+        series.cycles_per_byte.extend(row.cycles_per_byte);
+        series
+            .instructions_per_byte
+            .extend(row.instructions_per_byte);
         series.cpus.insert(row.cpu);
     }
     cells
@@ -214,6 +241,14 @@ fn median(mut xs: Vec<f64>) -> f64 {
         xs[n / 2]
     } else {
         (xs[n / 2 - 1] + xs[n / 2]) / 2.0
+    }
+}
+
+/// The median to two decimals, or `-` for a series without counters.
+fn median_or_dash(xs: &[f64]) -> String {
+    match xs {
+        [] => "-".into(),
+        xs => format!("{:.2}", median(xs.to_vec())),
     }
 }
 

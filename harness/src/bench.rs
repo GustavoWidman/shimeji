@@ -17,6 +17,7 @@ use std::time::{Duration, Instant, SystemTime};
 
 use harness::{BUILD_INFO, Digest, Implementation, Rng, implementations};
 
+use crate::counters::{self, Counters};
 use crate::{options, parse_list, platform};
 
 const LENGTHS: [usize; 7] = [16, 64, 256, 1024, 4096, 16384, 1 << 20];
@@ -75,6 +76,12 @@ pub fn main(args: &[String]) -> Result<(), String> {
     }
 
     let placement = platform::place(cpu)?;
+    let counters = Counters::open();
+    let counted = match &counters {
+        Ok(_) => counters::METHOD.to_owned(),
+        Err(err) => format!("none ({err}); cycle and instruction columns are empty"),
+    };
+    let counters = counters.ok();
     let host = platform::hostname();
     let started = utc(SystemTime::now());
     let path = match opts.get("out") {
@@ -95,7 +102,7 @@ pub fn main(args: &[String]) -> Result<(), String> {
         "host: {host}\nos: {}\ncpu: {}\ncommit: {}\nstarted: {started}\ncommand: harness {}\nthread: {placement}\n\
          method: {reps} repetitions per (implementation, digest, length), each one loop of at least {min_ms} ms, \
          implementation order alternating ABBA, \
-         after {} ms of warm-up\n",
+         after {} ms of warm-up\ncounters: {counted}\n",
         platform::output("uname", &["-srm"]),
         platform::cpu_model(),
         commit(),
@@ -108,7 +115,8 @@ pub fn main(args: &[String]) -> Result<(), String> {
     }
     writeln!(
         out,
-        "implementation\tdigest\tlength\trepetition\tns_per_byte\tns_per_message\tcpu\thost"
+        "implementation\tdigest\tlength\trepetition\tns_per_byte\tns_per_message\t\
+         cycles_per_byte\tinstructions_per_byte\tcpu\thost"
     )
     .map_err(io)?;
 
@@ -154,12 +162,21 @@ pub fn main(args: &[String]) -> Result<(), String> {
                     _ => (0..imps.len()).rev().collect(),
                 };
                 for i in order {
+                    let before = counters.as_ref().map(Counters::read);
                     let elapsed = time(imps[i], message, out_buf, iters[i]);
+                    let after = counters.as_ref().map(Counters::read);
                     let core = platform::current_cpu();
                     let ns_per_message = elapsed.as_nanos() as f64 / iters[i] as f64;
+                    let bytes = (iters[i] * len as u64) as f64;
+                    let counts = before.zip(after).and_then(|(b, a)| b.until(a));
+                    let per_byte = |n: Option<u64>| {
+                        n.map_or(String::new(), |n| format!("{:.4}", n as f64 / bytes))
+                    };
+                    let cycles = per_byte(counts.map(|c| c.cycles));
+                    let instructions = per_byte(counts.map(|c| c.instructions));
                     writeln!(
                         out,
-                        "{}\t{}\t{len}\t{rep}\t{:.6}\t{ns_per_message:.3}\t{core}\t{host}",
+                        "{}\t{}\t{len}\t{rep}\t{:.6}\t{ns_per_message:.3}\t{cycles}\t{instructions}\t{core}\t{host}",
                         imps[i].name,
                         digest.name(),
                         ns_per_message / len as f64,

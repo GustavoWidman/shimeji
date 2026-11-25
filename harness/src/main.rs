@@ -3,6 +3,7 @@
 //! confidence intervals.
 
 mod bench;
+mod counters;
 mod platform;
 mod summary;
 
