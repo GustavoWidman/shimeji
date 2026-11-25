@@ -30,6 +30,9 @@ macro_rules! lsh {
 
         const STEPS: usize = $steps;
         const GAMMA: [u32; 8] = $gamma;
+        /// Rotation amounts of even and odd steps.
+        const ALPHA: [u32; 2] = [$alpha_e, $alpha_o];
+        const BETA: [u32; 2] = [$beta_e, $beta_o];
         const TAU: [usize; 8] = [3, 2, 0, 1, 7, 4, 5, 6];
         const SIGMA: [usize; 16] = [6, 4, 5, 7, 12, 15, 14, 13, 2, 0, 1, 3, 8, 11, 10, 9];
 
@@ -100,17 +103,17 @@ macro_rules! lsh {
         /// Absorbs one message block into the chaining variable, with the
         /// step constants `sc`.
         #[inline(always)]
-        pub(crate) fn compress(cv: &mut [$w; 16], block: &[u8; BLOCK], sc: &[[$w; 8]; STEPS]) {
+        fn compress(cv: &mut [$w; 16], block: &[u8], sc: &[[$w; 8]; STEPS]) {
             let mut even = load(&block[..BLOCK / 2]);
             let mut odd = load(&block[BLOCK / 2..]);
             let mut s = *cv;
-            s = step(s, &even, &sc[0], $alpha_e, $beta_e);
-            s = step(s, &odd, &sc[1], $alpha_o, $beta_o);
+            s = step(s, &even, &sc[0], ALPHA[0], BETA[0]);
+            s = step(s, &odd, &sc[1], ALPHA[1], BETA[1]);
             $(
                 even = expand(even, &odd);
-                s = step(s, &even, &sc[2 * $pair], $alpha_e, $beta_e);
+                s = step(s, &even, &sc[2 * $pair], ALPHA[0], BETA[0]);
                 odd = expand(odd, &even);
-                s = step(s, &odd, &sc[2 * $pair + 1], $alpha_o, $beta_o);
+                s = step(s, &odd, &sc[2 * $pair + 1], ALPHA[1], BETA[1]);
             )+
             even = expand(even, &odd);
             for k in 0..16 {
@@ -118,16 +121,40 @@ macro_rules! lsh {
             }
         }
 
-        /// Pads the message's last, partial block `rest`, absorbs it and
-        /// returns the digest.
+        /// A function that absorbs whole blocks into a chaining variable.
+        type Blocks = fn(&mut [$w; 16], &[u8]);
+
+        /// Absorbs whole blocks with the portable compression function.
+        fn portable(cv: &mut [$w; 16], blocks: &[u8]) {
+            for block in blocks.chunks_exact(BLOCK) {
+                compress(cv, block, sc());
+            }
+        }
+
+        /// The fastest block function the running CPU supports: SIMD code
+        /// chosen at run time on x86-64.
+        #[cfg(target_arch = "x86_64")]
+        #[inline]
+        fn fastest() -> Blocks {
+            x86::fastest().unwrap_or(portable)
+        }
+
+        #[cfg(not(target_arch = "x86_64"))]
+        #[inline]
+        fn fastest() -> Blocks {
+            portable
+        }
+
+        /// Pads the message's last, partial block `rest`, absorbs it with
+        /// `blocks` and returns the digest.
         ///
         /// LSH appends a single `0x80` byte and zeros, with no length field,
         /// and always ends with this padded block.
-        fn finish<const N: usize>(mut cv: [$w; 16], rest: &[u8]) -> [u8; N] {
+        fn finish<const N: usize>(mut cv: [$w; 16], rest: &[u8], blocks: Blocks) -> [u8; N] {
             let mut last = [0u8; BLOCK];
             last[..rest.len()].copy_from_slice(rest);
             last[rest.len()] = 0x80;
-            compress(&mut cv, &last, sc());
+            blocks(&mut cv, &last);
             let mut h = [0u8; 8 * WORD];
             for k in 0..8 {
                 h[WORD * k..WORD * (k + 1)].copy_from_slice(&(cv[k] ^ cv[k + 8]).to_le_bytes());
@@ -164,28 +191,44 @@ macro_rules! lsh {
                     if self.len < BLOCK {
                         return;
                     }
-                    compress(&mut self.cv, &self.buf, sc());
+                    fastest()(&mut self.cv, &self.buf);
                     self.len = 0;
                 }
-                let mut blocks = data.chunks_exact(BLOCK);
-                for block in &mut blocks {
-                    compress(&mut self.cv, block.try_into().unwrap(), sc());
+                let whole = data.len() / BLOCK * BLOCK;
+                if whole > 0 {
+                    fastest()(&mut self.cv, &data[..whole]);
                 }
-                let rest = blocks.remainder();
+                let rest = &data[whole..];
                 self.buf[..rest.len()].copy_from_slice(rest);
                 self.len = rest.len();
             }
 
             /// Pads the last block, absorbs it and returns the digest.
             pub fn finalize(self) -> [u8; N] {
-                finish(self.cv, &self.buf[..self.len])
+                finish(self.cv, &self.buf[..self.len], fastest())
             }
 
             /// Hashes `data` in one call.
             pub fn digest(data: &[u8]) -> [u8; N] {
-                let mut hasher = Self::new();
-                hasher.update(data);
-                hasher.finalize()
+                Self::digest_with(data, fastest())
+            }
+
+            /// [`digest`](Self::digest) on the portable code, for testing and
+            /// measuring it on CPUs that also run SIMD code.
+            #[cfg(feature = "kernels")]
+            #[doc(hidden)]
+            pub fn digest_portable(data: &[u8]) -> [u8; N] {
+                Self::digest_with(data, portable)
+            }
+
+            /// Hashes `data` with `blocks` absorbing whole blocks.
+            fn digest_with(data: &[u8], blocks: Blocks) -> [u8; N] {
+                let mut cv = Self::IV;
+                let whole = data.len() / BLOCK * BLOCK;
+                if whole > 0 {
+                    blocks(&mut cv, &data[..whole]);
+                }
+                finish(cv, &data[whole..], blocks)
             }
         }
 

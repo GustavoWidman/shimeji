@@ -8,6 +8,11 @@ repository = "https://github.com/GustavoWidman/shimeji"
 keywords = ["lsh", "hash", "simd", "kcmvp"]
 categories = ["cryptography", "no-std"]
 
+[features]
+# Public digest methods that run one chosen compression kernel, for the
+# benchmark harness and the tests.
+kernels = []
+
 [dependencies]
 
 [workspace]

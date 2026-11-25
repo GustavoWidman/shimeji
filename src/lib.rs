@@ -10,6 +10,8 @@
 mod lsh;
 pub mod lsh256;
 pub mod lsh512;
+#[cfg(target_arch = "x86_64")]
+mod x86;
 
 pub use lsh256::Lsh256;
 pub use lsh512::Lsh512;
