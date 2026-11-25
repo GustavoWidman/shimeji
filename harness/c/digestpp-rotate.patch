@@ -1,0 +1,25 @@
+digestpp's rotate_left shifts right by the word size when the rotation is
+0, which C++ leaves undefined. LSH rotates by 0 in its gamma step, and
+clang at -O1 or above then computes wrong LSH digests. Masking the shift
+count gives every rotation, 0 included, its defined result.
+
+--- a/detail/functions.hpp
++++ b/detail/functions.hpp
+@@ -66,7 +66,7 @@
+ // Rotate 32-bit unsigned integer to the left.
+ inline uint32_t rotate_left(uint32_t x, unsigned n)
+ {
+-	return (x << n) | (x >> (32 - n));
++	return (x << n) | (x >> ((32 - n) & 31));
+ }
+ 
+ // Rotate 64-bit unsigned integer to the right.
+@@ -78,7 +78,7 @@
+ // Rotate 64-bit unsigned integer to the left.
+ inline uint64_t rotate_left(uint64_t x, unsigned n)
+ {
+-	return (x << n) | (x >> (64 - n));
++	return (x << n) | (x >> ((64 - n) & 63));
+ }
+ 
+ // Clear memory, suppressing compiler optimizations.

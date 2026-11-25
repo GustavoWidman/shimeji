@@ -38,6 +38,22 @@
                 hash = "sha256-o6glEAtWHIL0HbzUhyBBGfor7ZJeoHYMZ9zMYSIElpI=";
               };
             }
+            # digestpp, a header-only C++ hash library whose LSH
+            # harness/c/digestpp.cpp exports to the harness, with the fix in
+            # harness/c/digestpp-rotate.patch.
+            {
+              name = "DIGESTPP_SRC";
+              value = pkgs.applyPatches {
+                name = "digestpp-4beae7541f5c280389898ae6e6111028852f466a";
+                src = pkgs.fetchFromGitHub {
+                  owner = "kerukuro";
+                  repo = "digestpp";
+                  rev = "4beae7541f5c280389898ae6e6111028852f466a";
+                  hash = "sha256-8MMj9Q16AtQmaBhRbqZOYaOv2R4Lk1xTmp2QIN9TpKQ=";
+                };
+                patches = [ ./harness/c/digestpp-rotate.patch ];
+              };
+            }
           ]
           # nixpkgs builds Rust's standard library for macOS 14; rustc links
           # for 11.0 by default, and the linker warns on every std object.
