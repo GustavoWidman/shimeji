@@ -5,6 +5,13 @@
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
     flake-parts.url = "github:hercules-ci/flake-parts";
     devshell.url = "github:numtide/devshell";
+    # Rust nightly 2026-11-12 (rustc 1.102.0-nightly 3ef0c22cd), the rev the
+    # NixOS configuration of the benchmark machines pins, so the dev shell's
+    # rustc is the one installed on those systems.
+    fenix = {
+      url = "github:nix-community/fenix/0738efb391fea6fe32c886f5bac8e8ab90af3c81";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =
@@ -18,9 +25,14 @@
       imports = [ devshell.flakeModule ];
 
       perSystem =
-        { pkgs, lib, ... }:
         {
-          devshells.default.env = [
+          pkgs,
+          lib,
+          inputs',
+          ...
+        }:
+        let
+          env = [
             {
               name = "TYPST_FONT_PATHS";
               value = "${pkgs.gyre-fonts}/share/fonts";
@@ -61,11 +73,7 @@
             name = "MACOSX_DEPLOYMENT_TARGET";
             value = "14.0";
           };
-          devshells.default.packages = with pkgs; [
-            cargo
-            clippy
-            rustc
-            rustfmt
+          tools = with pkgs; [
             clang
             gnumake
             # go-krypto's amd64 assembly reads its IVs with aligned SSE loads
@@ -74,6 +82,35 @@
             go_1_26
             typst
           ];
+        in
+        {
+          devshells.default = {
+            inherit env;
+            packages = [
+              (inputs'.fenix.packages.complete.withComponents [
+                "cargo"
+                "clippy"
+                "rustc"
+                "rustfmt"
+                "rust-src"
+              ])
+            ]
+            ++ tools;
+          };
+          # nixpkgs' stable toolchain. The crate uses no nightly features;
+          # `nix develop .#stable -c cargo build -p shimeji --release` checks
+          # that it still builds on stable Rust.
+          devshells.stable = {
+            inherit env;
+            packages =
+              (with pkgs; [
+                cargo
+                clippy
+                rustc
+                rustfmt
+              ])
+              ++ tools;
+          };
         };
     };
 }
