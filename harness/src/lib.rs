@@ -22,6 +22,7 @@ macro_rules! shimeji_hash {
     };
 }
 
+mod allcrypt;
 mod cryptopp;
 mod digestpp;
 mod gokrypto;
@@ -188,6 +189,8 @@ pub static IMPLEMENTATIONS: &[Implementation] = &[
     digestpp::LSH512,
     lsh256rs::LSH256,
     lsh256rs::LSH512,
+    allcrypt::LSH256,
+    allcrypt::LSH512,
     #[cfg(target_arch = "aarch64")]
     gokrypto::NEON_256,
     #[cfg(target_arch = "aarch64")]

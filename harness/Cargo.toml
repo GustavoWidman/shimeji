@@ -9,6 +9,7 @@ publish = false
 [dependencies]
 shimeji = { path = "..", features = ["kernels"] }
 lsh256 = { git = "https://github.com/corp0ratestarts-cmd/LSH-256-Korea-KS-X-3262-RUST", rev = "4dea1ccaec9e22a3e1c10df89ce7b180b38fbc67" }
+allcrypt = { version = "=0.8.1", default-features = false }
 
 [build-dependencies]
 cc = "1"

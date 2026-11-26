@@ -99,6 +99,13 @@ portable Rust without `unsafe` and with all six digests, a git dependency
 in `Cargo.toml` pinned by commit and built with the workspace's release
 profile. its one-shot functions each allocate the digest as a `Vec`.
 
+`allcrypt` is the LSH of the allcrypt crate
+(https://github.com/gitallcrypt/allcrypt), portable Rust without `unsafe`
+and with all six digests, pinned to version 0.8.1 from crates.io in
+`Cargo.toml` with its optional features off. the entry hashes each message
+with a new hasher, `Lsh256::new(digest length)`, then `update` and `digest`,
+which returns the digest as a `Vec`.
+
 go-krypto (https://github.com/RyuaNerin/go-krypto, Go with assembly) is
 pinned to v1.3.0 by `go/go.mod` and `go/go.sum`; the first build downloads
 it through the Go module proxy. it is built with Go 1.26, because its amd64
