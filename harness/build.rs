@@ -11,12 +11,38 @@ use std::{env, fs};
 
 const CFLAGS: &[&str] = &["-O3", "-fPIC"];
 
-const VARIANTS: &[(&str, Option<&str>, &[&str])] = &[
-    ("ref", None, &[]),
-    ("neon", Some("aarch64"), &[]),
-    ("sse2", Some("x86_64"), &["-msse2"]),
-    ("ssse3", Some("x86_64"), &["-mssse3"]),
-    ("avx2", Some("x86_64"), &["-mavx2"]),
+struct Variant {
+    name: &'static str,
+    arch: Option<&'static str>,
+    flags: &'static [&'static str],
+}
+
+const VARIANTS: &[Variant] = &[
+    Variant {
+        name: "ref",
+        arch: None,
+        flags: &[],
+    },
+    Variant {
+        name: "neon",
+        arch: Some("aarch64"),
+        flags: &[],
+    },
+    Variant {
+        name: "sse2",
+        arch: Some("x86_64"),
+        flags: &["-msse2"],
+    },
+    Variant {
+        name: "ssse3",
+        arch: Some("x86_64"),
+        flags: &["-mssse3"],
+    },
+    Variant {
+        name: "avx2",
+        arch: Some("x86_64"),
+        flags: &["-mavx2"],
+    },
 ];
 
 const FAMILIES: &[&str] = &["lsh256", "lsh512"];
@@ -58,7 +84,12 @@ fn main() {
     writeln!(info, "rustflags: {rustflags}").unwrap();
     writeln!(info, "rust profile: {}", release_profile(root)).unwrap();
 
-    for &(variant, needs, flags) in VARIANTS {
+    for &Variant {
+        name: variant,
+        arch: needs,
+        flags,
+    } in VARIANTS
+    {
         println!("cargo::rustc-check-cfg=cfg(kisa_{variant})");
         if needs.is_some_and(|needs| needs != arch) {
             continue;
@@ -116,10 +147,28 @@ fn main() {
     fs::write(out.join("build-info.txt"), info).unwrap();
 }
 
-const LSH_SIMD: &[(&str, &str, &[&str])] = &[
-    ("sse2", "SSE2", &["-msse2"]),
-    ("ssse3", "SSSE3", &["-mssse3"]),
-    ("avx2", "AVX2", &["-mavx2"]),
+struct SimdVariant {
+    name: &'static str,
+    upstream: &'static str,
+    flags: &'static [&'static str],
+}
+
+const LSH_SIMD: &[SimdVariant] = &[
+    SimdVariant {
+        name: "sse2",
+        upstream: "SSE2",
+        flags: &["-msse2"],
+    },
+    SimdVariant {
+        name: "ssse3",
+        upstream: "SSSE3",
+        flags: &["-mssse3"],
+    },
+    SimdVariant {
+        name: "avx2",
+        upstream: "AVX2",
+        flags: &["-mavx2"],
+    },
 ];
 
 /// Compiles each `refs/lsh-simd` variant as KISA's code is compiled: every
@@ -134,7 +183,12 @@ fn lsh_simd(root: &Path, out: &Path, arch: &str, info: &mut String) {
     }
     let refs = root.join("refs/lsh-simd");
     println!("cargo::rerun-if-changed={}", refs.display());
-    for &(variant, upstream, flags) in LSH_SIMD {
+    for &SimdVariant {
+        name: variant,
+        upstream,
+        flags,
+    } in LSH_SIMD
+    {
         for bits in [256, 512] {
             let name = format!("lsh_simd_{variant}_lsh{bits}");
             let mut unit = String::new();

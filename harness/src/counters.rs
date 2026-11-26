@@ -64,7 +64,9 @@ mod os {
         fn read(fd: i32, buf: *mut std::ffi::c_void, count: usize) -> isize;
     }
 
-    pub struct Counters(i32);
+    pub struct Counters {
+        leader: i32,
+    }
 
     fn open(config: u64, group: i32) -> Result<i32, String> {
         let attr = Attr {
@@ -104,14 +106,14 @@ mod os {
                     std::io::Error::last_os_error()
                 ));
             }
-            Ok(Counters(leader))
+            Ok(Counters { leader })
         }
 
         pub fn read(&self) -> Counts {
             // nr, time_enabled, time_running, cycles, instructions.
             let mut buf = [0u64; 5];
             // SAFETY: writes at most `size_of_val(&buf)` bytes.
-            let n = unsafe { read(self.0, buf.as_mut_ptr().cast(), size_of_val(&buf)) };
+            let n = unsafe { read(self.leader, buf.as_mut_ptr().cast(), size_of_val(&buf)) };
             assert_eq!(n, size_of_val(&buf) as isize, "reading perf events");
             Counts {
                 cycles: buf[3],

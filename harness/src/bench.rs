@@ -4,7 +4,7 @@ use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant, SystemTime};
 
-use harness::{BUILD_INFO, Digest, Implementation, Rng, implementations};
+use harness::{BUILD_INFO, Digest, Implementation, SplitMix64, implementations};
 
 use crate::counters::{self, Counters};
 use crate::{options, parse_list, platform};
@@ -109,7 +109,7 @@ pub fn main(args: &[String]) -> Result<(), String> {
 
     let max = lengths.iter().copied().max().unwrap_or(0);
     let mut input = vec![0u8; max];
-    Rng::new(0x4c53_482d_4245_4e43).fill(&mut input);
+    SplitMix64::new(0x4c53_482d_4245_4e43).fill(&mut input);
     let mut digest_out = [0u8; 64];
     let min_time = Duration::from_millis(min_ms);
     if let Some(imp) = selected.first() {
@@ -130,7 +130,7 @@ pub fn main(args: &[String]) -> Result<(), String> {
             .collect();
         for &len in &lengths {
             let message = &input[..len];
-            let out_buf = &mut digest_out[..digest.len];
+            let out_buf = &mut digest_out[..digest.bytes];
             let iters: Vec<u64> = imps
                 .iter()
                 .map(|imp| calibrate(imp, message, out_buf, min_time))
@@ -221,7 +221,19 @@ fn utc(time: SystemTime) -> String {
         .unwrap()
         .as_secs();
     let (days, rem) = (secs / 86_400, secs % 86_400);
-    let z = days as i64 + 719_468;
+    let (year, month, day) = civil_from_days(days as i64);
+    format!(
+        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
+        rem / 3600,
+        rem % 3600 / 60,
+        rem % 60
+    )
+}
+
+/// The Gregorian date `days` after 1970-01-01, by Howard Hinnant's
+/// `civil_from_days` algorithm.
+fn civil_from_days(days: i64) -> (i64, i64, i64) {
+    let z = days + 719_468;
     let era = z.div_euclid(146_097);
     let doe = z - era * 146_097;
     let yoe = (doe - doe / 1460 + doe / 36_524 - doe / 146_096) / 365;
@@ -230,12 +242,7 @@ fn utc(time: SystemTime) -> String {
     let day = doy - (153 * mp + 2) / 5 + 1;
     let month = if mp < 10 { mp + 3 } else { mp - 9 };
     let year = yoe + era * 400 + i64::from(month <= 2);
-    format!(
-        "{year:04}-{month:02}-{day:02}T{:02}:{:02}:{:02}Z",
-        rem / 3600,
-        rem % 3600 / 60,
-        rem % 60
-    )
+    (year, month, day)
 }
 
 fn io(err: std::io::Error) -> String {

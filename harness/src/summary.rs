@@ -1,19 +1,19 @@
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 
-use harness::Rng;
+use harness::SplitMix64;
 
 use crate::{options, parse_list};
 
-const COLUMNS: [&str; 7] = [
+const REQUIRED_COLUMNS: [&str; 5] = [
     "implementation",
     "digest",
     "length",
     "ns_per_message",
     "cpu",
-    "cycles_per_byte",
-    "instructions_per_byte",
 ];
+const CYCLES_COLUMN: &str = "cycles_per_byte";
+const INSTRUCTIONS_COLUMN: &str = "instructions_per_byte";
 
 struct Row {
     implementation: String,
@@ -91,7 +91,7 @@ pub fn main(args: &[String]) -> Result<(), String> {
     )
     .unwrap();
 
-    let mut rng = Rng::new(0x424f_4f54_5354_5250);
+    let mut rng = SplitMix64::new(0x424f_4f54_5354_5250);
     for cell in cells(rows) {
         let base = cell.series.iter().find(|s| s.implementation == baseline);
         for series in &cell.series {
@@ -147,13 +147,13 @@ fn parse(text: &str) -> Result<Vec<Row>, String> {
         .filter(|line| !line.starts_with('#') && !line.is_empty());
     let header: Vec<&str> = lines.next().ok_or("no header row")?.split('\t').collect();
     let column = |name: &str| header.iter().position(|&h| h == name);
-    let [implementation, digest, length, ns_per_message, cpu] = COLUMNS[..5]
+    let [implementation, digest, length, ns_per_message, cpu] = REQUIRED_COLUMNS
         .iter()
         .map(|&name| column(name).ok_or(format!("no column {name} in {header:?}")))
         .collect::<Result<Vec<_>, _>>()?
         .try_into()
         .unwrap();
-    let (cycles, instructions) = (column(COLUMNS[5]), column(COLUMNS[6]));
+    let (cycles, instructions) = (column(CYCLES_COLUMN), column(INSTRUCTIONS_COLUMN));
     lines
         .map(|line| {
             let fields: Vec<&str> = line.split('\t').collect();
@@ -239,7 +239,7 @@ fn median_or_dash(xs: &[f64]) -> String {
     }
 }
 
-fn resample(rng: &mut Rng, xs: &[f64]) -> Vec<f64> {
+fn resample(rng: &mut SplitMix64, xs: &[f64]) -> Vec<f64> {
     (0..xs.len()).map(|_| xs[rng.below(xs.len())]).collect()
 }
 

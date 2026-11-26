@@ -1,4 +1,4 @@
-use harness::{Digest, Family, Implementation, Rng, implementations};
+use harness::{Digest, Family, Implementation, SplitMix64, implementations};
 
 const LONG: [usize; 4] = [65_535, 65_536, 65_537, 1 << 20];
 
@@ -26,7 +26,7 @@ fn every_digest_has_an_independent_implementation() {
 
 #[test]
 fn every_implementation_matches_portable() {
-    let mut rng = Rng::new(0x5348_494d_454a_4931);
+    let mut rng = SplitMix64::new(0x5348_494d_454a_4931);
     let mut buf = vec![0u8; (1 << 20) + 64];
     let mut mismatches = Vec::new();
     let mut compared = 0usize;
@@ -40,8 +40,8 @@ fn every_implementation_matches_portable() {
             for digest in imp.digests() {
                 let mut want = [0u8; 64];
                 let mut got = [0u8; 64];
-                (reference.hash)(message, &mut want[..digest.len]);
-                (imp.hash)(message, &mut got[..digest.len]);
+                (reference.hash)(message, &mut want[..digest.bytes]);
+                (imp.hash)(message, &mut got[..digest.bytes]);
                 compared += 1;
                 if want != got {
                     mismatches.push(format!("{} {} length {len}", imp.name, digest.name()));

@@ -142,7 +142,7 @@ pub fn main(args: &[String]) -> Result<(), String> {
     #[repr(align(64))]
     struct Message([u8; MESSAGE]);
     let mut message = Box::new(Message([0; MESSAGE]));
-    harness::Rng::new(1).fill(&mut message.0);
+    harness::SplitMix64::new(1).fill(&mut message.0);
     let message = &message.0[..];
     let idle = stack_used(&|| {});
     println!(

@@ -18,8 +18,8 @@ macro_rules! entry {
             family: Family::$family,
             digest_lengths: Family::$family.digest_lengths(),
             hash: $hash,
-            available: $available,
             repeat: None,
+            available: $available,
         };
     };
 }

@@ -61,7 +61,7 @@ impl Family {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Digest {
     pub family: Family,
-    pub len: usize,
+    pub bytes: usize,
 }
 
 impl Digest {
@@ -72,12 +72,12 @@ impl Digest {
                 family
                     .digest_lengths()
                     .iter()
-                    .map(move |&len| Digest { family, len })
+                    .map(move |&bytes| Digest { family, bytes })
             })
     }
 
     pub fn name(self) -> String {
-        format!("{}-{}", self.family.name(), 8 * self.len)
+        format!("{}-{}", self.family.name(), 8 * self.bytes)
     }
 
     pub fn parse(name: &str) -> Option<Digest> {
@@ -98,9 +98,9 @@ pub struct Implementation {
 
 impl Implementation {
     pub fn digests(&self) -> impl Iterator<Item = Digest> + '_ {
-        self.digest_lengths.iter().map(|&len| Digest {
+        self.digest_lengths.iter().map(|&bytes| Digest {
             family: self.family,
-            len,
+            bytes,
         })
     }
 }
@@ -215,11 +215,11 @@ fn always() -> bool {
 shimeji_hash!(shimeji_lsh256, shimeji_lsh512, digest);
 shimeji_hash!(portable_lsh256, portable_lsh512, digest_portable);
 
-pub struct Rng(u64);
+pub struct SplitMix64(u64);
 
-impl Rng {
+impl SplitMix64 {
     pub const fn new(seed: u64) -> Self {
-        Rng(seed)
+        SplitMix64(seed)
     }
 
     pub fn next_u64(&mut self) -> u64 {
