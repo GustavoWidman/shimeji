@@ -1,0 +1,23 @@
+diff --git a/src/lsh512/x86.rs b/src/lsh512/x86.rs
+index 499670a..0f87f18 100644
+--- a/src/lsh512/x86.rs
++++ b/src/lsh512/x86.rs
+@@ -296,17 +296,7 @@ macro_rules! rotl {
+ fn after(mut x: __m256i, m: &SubMessage) -> __m256i {
+     // SAFETY: the assembly is empty; it reads and writes nothing but the
+     // registers it names.
+-    unsafe {
+-        core::arch::asm!(
+-            "/* {0} {1} {2} {3} {4} */",
+-            inout(ymm_reg) x,
+-            in(ymm_reg) m[0],
+-            in(ymm_reg) m[1],
+-            in(ymm_reg) m[2],
+-            in(ymm_reg) m[3],
+-            options(pure, nomem, nostack, preserves_flags),
+-        );
+-    }
++    let _ = m;
+     x
+ }
+ 

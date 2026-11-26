@@ -1,0 +1,108 @@
+# host: desktop-nixos
+# os: Linux 7.3.5 x86_64
+# cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+# commit: 94a504e1acfe3f3fb245c9617e430cef437049af
+# started: 2026-11-26T16:32:17Z
+# command: harness bench --impl shimeji-avx2 --digest lsh512-512 --len 64,1024,1048576 --reps 21 --cpu 8 --out results/asm-barrier/with-1.tsv
+# thread: pinned to CPU 8
+# method: 21 repetitions per (implementation, digest, length), each one loop of at least 20 ms, implementation order alternating ABBA, after 500 ms of warm-up
+# counters: perf_event_open, PERF_TYPE_HARDWARE cycles and instructions as one group on this thread, user mode only
+# cc: clang version 21.1.8
+# rustc: rustc 1.102.0-nightly (3ef0c22cd 2026-11-11)
+# rustflags: 
+# rust profile: release, opt-level = 3, codegen-units = 1, lto = "fat"
+# cflags kisa-ref lsh256: -w -O3 -fPIC
+# cflags kisa-ref lsh512: -w -O3 -fPIC
+# cflags kisa-sse2 lsh256: -w -O3 -fPIC -msse2
+# cflags kisa-sse2 lsh512: -w -O3 -fPIC -msse2
+# cflags kisa-ssse3 lsh256: -w -O3 -fPIC -mssse3
+# cflags kisa-ssse3 lsh512: -w -O3 -fPIC -mssse3
+# cflags kisa-avx2 lsh256: -w -O3 -fPIC -mavx2
+# cflags kisa-avx2 lsh512: -w -O3 -fPIC -mavx2
+# cflags lsh-simd-sse2 lsh256: -w -O3 -fPIC -msse2
+# cflags lsh-simd-sse2 lsh512: -w -O3 -fPIC -msse2
+# cflags lsh-simd-ssse3 lsh256: -w -O3 -fPIC -mssse3
+# cflags lsh-simd-ssse3 lsh512: -w -O3 -fPIC -mssse3
+# cflags lsh-simd-avx2 lsh256: -w -O3 -fPIC -mavx2
+# cflags lsh-simd-avx2 lsh512: -w -O3 -fPIC -mavx2
+# pbkdf2-lsh: https://raw.githubusercontent.com/ondoli0312/PBKDF2-HMAC-LSH256/be7026c11701490b7219353d1289b480efccb9da
+# cflags pbkdf2-lsh-sse2 lsh256: -w -O3 -fPIC -msse2 -fms-extensions
+# cryptopp: /nix/store/6vva7pd6nq5j4ri5y4gyimpsihfjymq8-cryptopp-5873a73a231c95771f5bbf3466a484952fb22780
+# cryptopp build: make static CXX=clang++ CXXFLAGS=-O3 -fPIC -DNDEBUG CPPFLAGS=
+# cxxflags cryptopp: clang++ -O3 -fPIC -DNDEBUG -c lsh256.cpp
+# cxxflags cryptopp: clang++ -O3 -fPIC -DNDEBUG -mavx2 -c lsh256_avx.cpp
+# cxxflags cryptopp: clang++ -O3 -fPIC -DNDEBUG -mssse3 -c lsh256_sse.cpp
+# cxxflags cryptopp: clang++ -O3 -fPIC -DNDEBUG -c lsh512.cpp
+# cxxflags cryptopp: clang++ -O3 -fPIC -DNDEBUG -mavx2 -c lsh512_avx.cpp
+# cxxflags cryptopp: clang++ -O3 -fPIC -DNDEBUG -mssse3 -c lsh512_sse.cpp
+# cxxflags cryptopp shim: -I /home/r3dlust/shimeji-run/target/release/build/harness/64b55bdcd7a7f5d3/out/6vva7pd6nq5j4ri5y4gyimpsihfjymq8-cryptopp-5873a73a231c95771f5bbf3466a484952fb22780 -w -O3 -fPIC -DNDEBUG
+# digestpp: /nix/store/c9mkpfy50fvv0165vggxkwf55hcs579f-digestpp-4beae7541f5c280389898ae6e6111028852f466a
+# digestpp patch: harness/c/digestpp-rotate.patch
+# cxxflags digestpp shim: -I /nix/store/c9mkpfy50fvv0165vggxkwf55hcs579f-digestpp-4beae7541f5c280389898ae6e6111028852f466a -w -O3 -fPIC -DNDEBUG
+# go: go version go1.26.11 linux/amd64
+# go-krypto: github.com/RyuaNerin/go-krypto v1.3.0
+# go build: CC=clang CGO_ENABLED=1 GOFLAGS=-mod=readonly GOTOOLCHAIN=local go build -buildmode=c-archive -trimpath
+implementation	digest	length	repetition	ns_per_byte	ns_per_message	cycles_per_byte	instructions_per_byte	cpu	host
+shimeji-avx2	lsh512-512	64	0	2.972461	190.237	8.9200	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	1	2.973857	190.327	8.9242	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	2	2.971655	190.186	8.9176	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	3	2.972224	190.222	8.9193	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	4	2.971558	190.180	8.9173	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	5	2.974305	190.356	8.9256	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	6	2.974491	190.367	8.9262	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	7	2.971819	190.196	8.9182	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	8	2.974605	190.375	8.9266	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	9	2.971153	190.154	8.9161	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	10	2.972023	190.210	8.9188	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	11	2.972365	190.231	8.9198	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	12	2.976316	190.484	8.9317	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	13	2.971410	190.170	8.9170	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	14	2.972331	190.229	8.9197	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	15	2.970945	190.140	8.9155	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	16	2.971987	190.207	8.9187	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	17	2.972134	190.217	8.9191	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	18	2.972010	190.209	8.9188	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	19	2.971871	190.200	8.9182	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	64	20	2.971917	190.203	8.9184	18.9532	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	0	0.878063	899.137	2.6350	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	1	0.877849	898.917	2.6344	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	2	0.879113	900.212	2.6382	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	3	0.878248	899.326	2.6356	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	4	0.878137	899.212	2.6352	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	5	0.878278	899.356	2.6356	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	6	0.877400	898.458	2.6330	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	7	0.878252	899.330	2.6356	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	8	0.878057	899.130	2.6350	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	9	0.878065	899.138	2.6350	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	10	0.879173	900.274	2.6383	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	11	0.878468	899.551	2.6362	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	12	0.878069	899.143	2.6350	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	13	0.879331	900.435	2.6388	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	14	0.877691	898.756	2.6338	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	15	0.877570	898.632	2.6335	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	16	0.878405	899.487	2.6360	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	17	0.877918	898.988	2.6345	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	18	0.877796	898.864	2.6342	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	19	0.878158	899.234	2.6353	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1024	20	0.877927	898.997	2.6346	5.3418	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	0	0.680179	713219.400	2.0411	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	1	0.677937	710868.800	2.0344	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	2	0.679488	712494.767	2.0391	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	3	0.680270	713314.667	2.0414	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	4	0.679318	712316.133	2.0386	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	5	0.678899	711876.867	2.0373	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	6	0.678986	711968.767	2.0376	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	7	0.679714	712731.433	2.0398	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	8	0.679198	712190.233	2.0382	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	9	0.679504	712511.233	2.0391	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	10	0.679023	712007.000	2.0377	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	11	0.679103	712091.400	2.0379	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	12	0.678659	711626.000	2.0366	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	13	0.679359	712359.500	2.0387	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	14	0.678802	711775.400	2.0370	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	15	0.678878	711855.333	2.0372	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	16	0.679124	712113.167	2.0380	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	17	0.680006	713037.500	2.0406	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	18	0.679655	712669.433	2.0396	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	19	0.679607	712619.567	2.0394	4.1262	8	desktop-nixos
+shimeji-avx2	lsh512-512	1048576	20	0.679981	713012.100	2.0406	4.1262	8	desktop-nixos
