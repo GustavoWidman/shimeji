@@ -1,5 +1,3 @@
-// Exports Crypto++'s LSH-256 and LSH-512 to the harness.
-
 #include <cstddef>
 #include <string>
 
@@ -17,15 +15,12 @@ public:
     std::string AlgorithmName() const { return "LSH-512-224"; }
 };
 
-// Hashes the message with one object per thread, which CalculateDigest
-// leaves ready for the next message.
 template <class H>
 void digest(const byte *msg, size_t msglen, byte *out) {
     thread_local H hash;
     hash.CalculateDigest(out, msg, msglen);
 }
 
-// The code path Crypto++ takes on this CPU, in the harness's names.
 const char *path(const std::string &provider) {
     if (provider == "AVX2") return "avx2";
     if (provider == "SSSE3") return "ssse3";
@@ -33,11 +28,8 @@ const char *path(const std::string &provider) {
     return "unknown";
 }
 
-}  // namespace
+}
 
-// Hashes the msglen-byte message at msg with LSH-256 and writes the
-// outlen-byte digest (28 or 32) to out. Returns 0, or -1 for any other
-// digest length.
 extern "C" int cryptopp_lsh256(const byte *msg, size_t msglen, byte *out, size_t outlen) {
     switch (outlen) {
     case 28: digest<CryptoPP::LSH224>(msg, msglen, out); return 0;
@@ -46,7 +38,6 @@ extern "C" int cryptopp_lsh256(const byte *msg, size_t msglen, byte *out, size_t
     }
 }
 
-// cryptopp_lsh256 for LSH-512, whose digests are 28, 32, 48 or 64 bytes.
 extern "C" int cryptopp_lsh512(const byte *msg, size_t msglen, byte *out, size_t outlen) {
     switch (outlen) {
     case 28: digest<LSH512_224>(msg, msglen, out); return 0;
@@ -57,12 +48,10 @@ extern "C" int cryptopp_lsh512(const byte *msg, size_t msglen, byte *out, size_t
     }
 }
 
-// The path ("ref", "ssse3" or "avx2") Crypto++'s LSH-256 takes on this CPU.
 extern "C" const char *cryptopp_lsh256_path() {
     return path(CryptoPP::LSH256().AlgorithmProvider());
 }
 
-// The path Crypto++'s LSH-512 takes on this CPU.
 extern "C" const char *cryptopp_lsh512_path() {
     return path(CryptoPP::LSH512().AlgorithmProvider());
 }

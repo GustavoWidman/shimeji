@@ -1,13 +1,3 @@
-//! Cycles and retired instructions of the calling thread, read around each
-//! timed loop.
-//!
-//! Linux opens the two hardware events as one group with `perf_event_open`,
-//! counting user mode only. macOS reads the core's fixed cycle and
-//! instruction counters as accumulated for this thread with
-//! `thread_selfcounts`, which needs no privileges and counts user and kernel
-//! mode; a timed loop spends almost no time in the kernel.
-
-/// Counts accumulated by the thread so far.
 #[derive(Clone, Copy)]
 pub struct Counts {
     pub cycles: u64,
@@ -20,8 +10,6 @@ pub struct Counts {
 }
 
 impl Counts {
-    /// The counts from `self` to `later`, or `None` if the counters missed
-    /// part of that interval.
     pub fn until(self, later: Counts) -> Option<Counts> {
         let enabled = later.enabled - self.enabled;
         let running = later.running - self.running;
@@ -76,7 +64,6 @@ mod os {
         fn read(fd: i32, buf: *mut std::ffi::c_void, count: usize) -> isize;
     }
 
-    /// The group leader (cycles); instructions is its member.
     pub struct Counters(i32);
 
     fn open(config: u64, group: i32) -> Result<i32, String> {

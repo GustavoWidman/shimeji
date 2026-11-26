@@ -1,11 +1,3 @@
-//! Reduces a benchmark TSV to one line per (digest, length, implementation):
-//! the median time with a 95% percentile-bootstrap confidence interval, and
-//! the speedup over a baseline implementation (baseline median divided by
-//! this median) with its own bootstrap interval, resampling both series
-//! independently. The bootstrap is seeded, so the same file always gives the
-//! same summary. Next to the time it prints the median cycles and retired
-//! instructions per byte, when the file has them.
-
 use std::collections::BTreeSet;
 use std::fmt::Write as _;
 
@@ -13,8 +5,6 @@ use harness::Rng;
 
 use crate::{options, parse_list};
 
-/// Columns `summary` reads. Files written before the benchmark recorded
-/// counters lack the last two.
 const COLUMNS: [&str; 7] = [
     "implementation",
     "digest",
@@ -35,7 +25,6 @@ struct Row {
     instructions_per_byte: Option<f64>,
 }
 
-/// The repetitions of one implementation in one (digest, length) cell.
 struct Series {
     implementation: String,
     ns_per_message: Vec<f64>,
@@ -189,7 +178,6 @@ fn parse(text: &str) -> Result<Vec<Row>, String> {
         .collect()
 }
 
-/// Groups rows into cells and series, in the order they first appear.
 fn cells(rows: Vec<Row>) -> Vec<Cell> {
     let mut cells: Vec<Cell> = Vec::new();
     for row in rows {
@@ -244,7 +232,6 @@ fn median(mut xs: Vec<f64>) -> f64 {
     }
 }
 
-/// The median to two decimals, or `-` for a series without counters.
 fn median_or_dash(xs: &[f64]) -> String {
     match xs {
         [] => "-".into(),
@@ -256,7 +243,6 @@ fn resample(rng: &mut Rng, xs: &[f64]) -> Vec<f64> {
     (0..xs.len()).map(|_| xs[rng.below(xs.len())]).collect()
 }
 
-/// The 2.5th and 97.5th percentiles.
 fn interval(mut draws: Vec<f64>) -> (f64, f64) {
     draws.sort_by(f64::total_cmp);
     let at = |q: f64| draws[((draws.len() - 1) as f64 * q).round() as usize];

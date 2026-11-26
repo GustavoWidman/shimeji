@@ -1,16 +1,5 @@
-//! digestpp's LSH (https://github.com/kerukuro/digestpp), portable
-//! header-only C++, called through the exports in `c/digestpp.cpp`, which
-//! `build.rs` compiles against the commit `flake.nix` pins.
-//!
-//! Each message gets a new hasher, which derives its IV with one compression
-//! function call on a zero block, as digestpp does for every digest length.
-//! Hashing in a C++ loop instead of one call per message changes its time
-//! for 64-byte messages by less than 0.5%, so it has no `repeat`.
-
 use crate::{Family, Implementation};
 
-/// Hashes the message and writes the `outlen`-byte digest; returns -1 for a
-/// digest length it lacks.
 type Export = unsafe extern "C" fn(*const u8, usize, *mut u8, usize) -> i32;
 
 unsafe extern "C" {

@@ -1,29 +1,16 @@
-//! Compiles KISA's LSH code from `refs/kisa` once per variant.
-//!
 //! Every variant defines the same four functions (`lsh256_init`, `_update`,
 //! `_final`, `_digest`, or their `lsh512_` counterparts). Each variant is built
 //! from a generated translation unit that renames them with `#define` to
 //! `kisa_<variant>_<function>` and then includes the vendored `lsh-impl.c`
-//! unchanged, so every variant links side by side. After it the unit defines
-//! `lsh256_repeat` (or `lsh512_repeat`), which calls `_digest` a given number
-//! of times: the loop the benchmark times.
-//!
-//! The flags below, and the full compiler command line `cc` derives from them,
-//! are written to `$OUT_DIR/build-info.txt`, which the benchmark copies into
-//! the header of every result file.
+//! unchanged, so every variant links side by side.
 
 use std::fmt::Write as _;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
 
-/// Flags every KISA variant is compiled with. `cc`'s own defaults are turned
-/// off, so these and the per-variant flags below are the whole command line.
 const CFLAGS: &[&str] = &["-O3", "-fPIC"];
 
-/// KISA variants: name, the target architecture it needs (none for portable
-/// C), and its instruction-set flags.
-/// The `xop` variant is left out: it needs AMD XOP hardware.
 const VARIANTS: &[(&str, Option<&str>, &[&str])] = &[
     ("ref", None, &[]),
     ("neon", Some("aarch64"), &[]),
@@ -120,9 +107,6 @@ fn main() {
     fs::write(out.join("build-info.txt"), info).unwrap();
 }
 
-/// Variants of Kim, Jung, Ju and Song's SIMD LSH code in `refs/lsh-simd`,
-/// all for x86-64: name, the upstream directory name that its file names
-/// carry, and its instruction-set flags.
 const LSH_SIMD: &[(&str, &str, &[&str])] = &[
     ("sse2", "SSE2", &["-msse2"]),
     ("ssse3", "SSSE3", &["-mssse3"]),
@@ -181,9 +165,6 @@ fn lsh_simd(root: &Path, out: &Path, arch: &str, info: &mut String) {
     }
 }
 
-/// Choi and Seo's PBKDF2-HMAC-LSH256 code, whose repository has no license
-/// and so is not part of this one: the commit, and the files its SSE2 LSH-256
-/// needs with their SHA-256 digests.
 const PBKDF2_LSH_URL: &str = "https://raw.githubusercontent.com/ondoli0312/PBKDF2-HMAC-LSH256/be7026c11701490b7219353d1289b480efccb9da";
 const PBKDF2_LSH_FILES: &[(&str, &str)] = &[
     (
@@ -200,15 +181,11 @@ const PBKDF2_LSH_FILES: &[(&str, &str)] = &[
     ),
 ];
 
-/// Downloads Choi and Seo's SSE2 LSH-256 into `refs/pbkdf2-lsh`, which git
-/// ignores, unless the files there already have the pinned digests, and
-/// compiles `SIMD_LSH_256.c` with KISA's flags and `-fms-extensions`, for its
-/// `__declspec(align)` and `__int64`. `LSH256.h` declares `SIMD_Compression`
-/// with one parameter and `SIMD_LSH_256.c` defines it with two, which C
-/// rejects, so the generated unit first includes the header with that
-/// declaration renamed; its `#pragma once` then skips the `.c` file's
-/// include. The unit adds `pbkdf2_lsh_sse2_lsh256_repeat`, which calls
-/// `SIMD_LSH256` a given number of times.
+/// `-fms-extensions` is for the code's `__declspec(align)` and `__int64`.
+/// `LSH256.h` declares `SIMD_Compression` with one parameter and
+/// `SIMD_LSH_256.c` defines it with two, which C rejects, so the generated
+/// unit first includes the header with that declaration renamed; its
+/// `#pragma once` then skips the `.c` file's include.
 fn pbkdf2_lsh(root: &Path, out: &Path, arch: &str, info: &mut String) {
     if arch != "x86_64" {
         return;
@@ -283,8 +260,6 @@ fn pbkdf2_lsh(root: &Path, out: &Path, arch: &str, info: &mut String) {
     build.compile("pbkdf2_lsh_sse2");
 }
 
-/// The SHA-256 of a file, in hex, from `shasum`, which `refs/fetch.sh` also
-/// uses.
 fn sha256(path: &Path) -> String {
     let output = Command::new("shasum")
         .args(["-a", "256"])
@@ -296,21 +271,17 @@ fn sha256(path: &Path) -> String {
     line.split_whitespace().next().unwrap().to_owned()
 }
 
-/// Flags Crypto++ and the shim around it are compiled with: KISA's flags, and
-/// `-DNDEBUG`, which Crypto++'s GNUmakefile also adds by default.
+/// `-DNDEBUG` is what Crypto++'s GNUmakefile adds by default.
 const CXXFLAGS: &[&str] = &["-O3", "-fPIC", "-DNDEBUG"];
 const CXX: &str = "clang++";
 
-/// Builds Crypto++ from `$CRYPTOPP_SRC`, which `flake.nix` pins, with its own
-/// GNUmakefile and the clang that compiles KISA's code, then the shim in
-/// `c/cryptopp.cpp`, and links both. The GNUmakefile adds `-mssse3` and
-/// `-mavx2` to the SSSE3 and AVX2 LSH files on x86-64.
+/// The GNUmakefile adds `-mssse3` and `-mavx2` to the SSSE3 and AVX2 LSH
+/// files on x86-64.
 fn cryptopp(manifest: &Path, out: &Path, info: &mut String) {
     println!("cargo::rerun-if-env-changed=CRYPTOPP_SRC");
     let src = PathBuf::from(
         env::var("CRYPTOPP_SRC").expect("CRYPTOPP_SRC is not set; run cargo from `nix develop`"),
     );
-    // One build directory per source, so make rebuilds only what changed.
     let dir = out.join(src.file_name().unwrap());
     if !dir.exists() {
         let copied = Command::new("cp").arg("-R").arg(&src).arg(&dir).status();
@@ -336,7 +307,6 @@ fn cryptopp(manifest: &Path, out: &Path, info: &mut String) {
         "building Crypto++ failed:\n{}",
         String::from_utf8_lossy(&output.stderr)
     );
-    // The compile lines of the LSH files, kept from the build that ran them.
     let commands = dir.join("lsh-commands.txt");
     let lsh: String = String::from_utf8_lossy(&output.stdout)
         .lines()
@@ -371,9 +341,6 @@ fn cryptopp(manifest: &Path, out: &Path, info: &mut String) {
     writeln!(info, "cxxflags cryptopp shim: {shim}").unwrap();
 }
 
-/// Compiles `c/digestpp.cpp`, which exports digestpp's header-only LSH, with
-/// the flags of the Crypto++ shim and digestpp from `$DIGESTPP_SRC`, which
-/// `flake.nix` pins and patches with `c/digestpp-rotate.patch`.
 fn digestpp(manifest: &Path, info: &mut String) {
     println!("cargo::rerun-if-env-changed=DIGESTPP_SRC");
     let src = PathBuf::from(
@@ -396,9 +363,6 @@ fn digestpp(manifest: &Path, info: &mut String) {
     build.compile("digestpp_shim");
 }
 
-/// Builds `go/`, the cgo exports of go-krypto's LSH, as a static C archive
-/// and links it. The go-krypto version is pinned by `go/go.mod` and
-/// `go/go.sum`.
 fn gokrypto(manifest: &Path, out: &Path, info: &mut String) {
     let dir = manifest.join("go");
     println!("cargo::rerun-if-changed={}", dir.display());
@@ -468,8 +432,6 @@ fn command_line(build: &cc::Build) -> String {
     args.join(" ")
 }
 
-/// The Cargo profile this build uses, with the workspace's `[profile.release]`
-/// settings when it is the release profile.
 fn release_profile(root: &Path) -> String {
     let manifest = fs::read_to_string(root.join("Cargo.toml")).unwrap();
     println!(

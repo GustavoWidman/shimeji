@@ -1,7 +1,3 @@
-//! `harness bench` measures every registry implementation and writes one TSV
-//! row per repetition; `harness summary` reduces such a file to medians and
-//! confidence intervals.
-
 mod bench;
 mod counters;
 mod platform;
@@ -42,8 +38,6 @@ fn main() -> ExitCode {
     }
 }
 
-/// Splits `--name value` pairs, rejecting names not in `known`; anything else
-/// is returned as a positional argument.
 fn options(
     args: &[String],
     known: &[&str],

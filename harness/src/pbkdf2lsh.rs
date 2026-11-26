@@ -1,8 +1,3 @@
-//! Choi and Seo's SSE2 LSH-256, from their PBKDF2-HMAC-LSH256 code
-//! (https://github.com/ondoli0312/PBKDF2-HMAC-LSH256). That repository has
-//! no license, so `build.rs` downloads the code at a pinned commit instead of
-//! keeping it in this one. It computes LSH-256-256 only.
-
 use crate::{Family, Implementation};
 
 unsafe extern "C" {

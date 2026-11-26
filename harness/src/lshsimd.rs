@@ -1,12 +1,5 @@
-//! Kim, Jung, Ju and Song's SIMD LSH ("Fast Implementation of LSH With
-//! SIMD", IEEE Access, 2019), C with SSE2, SSSE3 or AVX2 intrinsics,
-//! compiled by `build.rs` from `refs/lsh-simd` under the symbol prefix
-//! `lsh_simd_<variant>_`.
-
 use crate::{Family, Implementation};
 
-/// `Hash256` or `Hash512` run `iters` times: digest length and message
-/// length in bits, then message, digest and count. Returns 0 on success.
 type Repeat = unsafe extern "C" fn(i32, *const u8, u64, *mut u8, u64) -> i32;
 
 fn call(repeat: Repeat, message: &[u8], out: &mut [u8], iters: u64) {

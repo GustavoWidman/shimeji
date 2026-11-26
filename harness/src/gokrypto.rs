@@ -1,7 +1,3 @@
-//! go-krypto's LSH (github.com/RyuaNerin/go-krypto), Go with assembly,
-//! called through the cgo exports in `go/gokrypto.go`, which `build.rs`
-//! links as a static C archive.
-//!
 //! go-krypto picks its assembly from the CPU's features when the Go runtime
 //! starts (`lsh256/asm_*.go`, `lsh512/asm_*.go`). Each entry is named after
 //! one of those paths and is available exactly when go-krypto takes it. On
@@ -13,8 +9,6 @@
 
 use crate::{Family, Implementation};
 
-/// A cgo export: hashes the message `iters` times and writes the
-/// `outlen`-byte digest; returns -1 for a digest length it lacks.
 type Export = unsafe extern "C" fn(*const u8, usize, *mut u8, usize, u64) -> i32;
 
 unsafe extern "C" {

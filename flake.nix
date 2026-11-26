@@ -37,9 +37,6 @@
               name = "TYPST_FONT_PATHS";
               value = "${pkgs.gyre-fonts}/share/fonts";
             }
-            # Crypto++ source, which harness/build.rs builds with the dev
-            # shell's clang. The commit is the one refs/fetch.sh takes the
-            # LSH test vectors from.
             {
               name = "CRYPTOPP_SRC";
               value = pkgs.fetchFromGitHub {
@@ -50,9 +47,6 @@
                 hash = "sha256-o6glEAtWHIL0HbzUhyBBGfor7ZJeoHYMZ9zMYSIElpI=";
               };
             }
-            # digestpp, a header-only C++ hash library whose LSH
-            # harness/c/digestpp.cpp exports to the harness, with the fix in
-            # harness/c/digestpp-rotate.patch.
             {
               name = "DIGESTPP_SRC";
               value = pkgs.applyPatches {
@@ -67,8 +61,6 @@
               };
             }
           ]
-          # nixpkgs builds Rust's standard library for macOS 14; rustc links
-          # for 11.0 by default, and the linker warns on every std object.
           ++ lib.optional pkgs.stdenv.hostPlatform.isDarwin {
             name = "MACOSX_DEPLOYMENT_TARGET";
             value = "14.0";
@@ -97,9 +89,6 @@
             ]
             ++ tools;
           };
-          # nixpkgs' stable toolchain. The crate uses no nightly features;
-          # `nix develop .#stable -c cargo build -p shimeji --release` checks
-          # that it still builds on stable Rust.
           devshells.stable = {
             inherit env;
             packages =

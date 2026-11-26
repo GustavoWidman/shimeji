@@ -1,12 +1,3 @@
-//! The registry of LSH implementations that shimeji is tested and measured
-//! against.
-//!
-//! [`IMPLEMENTATIONS`] is the one list both the differential test and the
-//! benchmark iterate; adding an implementation means adding an entry here.
-
-/// Defines `hash` functions for an LSH-256 and an LSH-512 entry from a
-/// shimeji method that returns the digest, or an `Option` of it (`unwrap`ped)
-/// for code paths the CPU may lack.
 macro_rules! shimeji_hash {
     ($lsh256:ident, $lsh512:ident, $method:ident $(, $unwrap:ident)?) => {
         fn $lsh256(message: &[u8], out: &mut [u8]) {
@@ -43,11 +34,8 @@ mod pbkdf2lsh;
 #[cfg(target_arch = "x86_64")]
 mod x86;
 
-/// Bytes the build script recorded about how this crate and KISA's code were
-/// compiled, one `key: value` per line.
 pub const BUILD_INFO: &str = include_str!(concat!(env!("OUT_DIR"), "/build-info.txt"));
 
-/// An LSH family: LSH-256 (32-bit words) or LSH-512 (64-bit words).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Family {
     Lsh256,
@@ -55,7 +43,6 @@ pub enum Family {
 }
 
 impl Family {
-    /// Digest lengths in bytes the standard defines for this family.
     pub const fn digest_lengths(self) -> &'static [usize] {
         match self {
             Family::Lsh256 => &[28, 32],
@@ -71,11 +58,9 @@ impl Family {
     }
 }
 
-/// One of the six standardized hash functions, such as LSH-512-224.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub struct Digest {
     pub family: Family,
-    /// Digest length in bytes.
     pub len: usize,
 }
 
@@ -91,7 +76,6 @@ impl Digest {
             })
     }
 
-    /// The name used in result files, such as `lsh512-224`.
     pub fn name(self) -> String {
         format!("{}-{}", self.family.name(), 8 * self.len)
     }
@@ -101,27 +85,14 @@ impl Digest {
     }
 }
 
-/// Hashes a message a given number of times into an output slice.
 pub type Repeat = fn(&[u8], &mut [u8], u64);
 
-/// One implementation of one LSH family.
 pub struct Implementation {
-    /// Name used in result files and on the command line, shared by an
-    /// implementation's LSH-256 and LSH-512 entries.
     pub name: &'static str,
     pub family: Family,
-    /// Digest lengths in bytes this implementation computes.
     pub digest_lengths: &'static [usize],
-    /// Writes the digest of the message into the output slice, whose length
-    /// selects the digest length (one of `digest_lengths`).
     pub hash: fn(&[u8], &mut [u8]),
-    /// Hashes one message the given number of times in a loop inside the
-    /// implementation's own language, leaving the digest in the output
-    /// slice. The benchmark times this loop instead of calling
-    /// `hash` once per message, for implementations behind a foreign call
-    /// that costs as much as hashing a short message.
     pub repeat: Option<Repeat>,
-    /// Whether the running CPU can execute this implementation.
     pub available: fn() -> bool,
 }
 
@@ -134,8 +105,6 @@ impl Implementation {
     }
 }
 
-/// Every implementation compiled into this build, including ones the
-/// running CPU cannot execute; [`implementations`] filters those out.
 pub static IMPLEMENTATIONS: &[Implementation] = &[
     Implementation {
         name: "shimeji",
@@ -235,7 +204,6 @@ pub static IMPLEMENTATIONS: &[Implementation] = &[
     gokrypto::AVX2_512,
 ];
 
-/// The implementations the running CPU can execute.
 pub fn implementations() -> impl Iterator<Item = &'static Implementation> {
     IMPLEMENTATIONS.iter().filter(|imp| (imp.available)())
 }
@@ -247,8 +215,6 @@ fn always() -> bool {
 shimeji_hash!(shimeji_lsh256, shimeji_lsh512, digest);
 shimeji_hash!(portable_lsh256, portable_lsh512, digest_portable);
 
-/// SplitMix64: the deterministic generator behind test messages, benchmark
-/// inputs and bootstrap resampling.
 pub struct Rng(u64);
 
 impl Rng {
@@ -264,7 +230,6 @@ impl Rng {
         z ^ (z >> 31)
     }
 
-    /// A uniform index below `n`.
     pub fn below(&mut self, n: usize) -> usize {
         (self.next_u64() % n as u64) as usize
     }

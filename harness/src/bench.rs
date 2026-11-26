@@ -1,14 +1,3 @@
-//! The benchmark.
-//!
-//! After one warm-up period for the whole run, each (digest, message length)
-//! cell first calibrates every selected implementation: the number of hashes
-//! per timed loop is raised until one loop takes at least the minimum time,
-//! so timer resolution is negligible.
-//! Repetitions then alternate the implementation order (A B, B A, A B, ...) so
-//! slow drifts in clock speed or temperature fall evenly on all of them.
-//! `black_box` hides the message, the output buffer and the function pointer
-//! from the optimizer, so every hash is an opaque call whose result is used.
-
 use std::fs::{self, File};
 use std::hint::black_box;
 use std::io::{BufWriter, Write};
@@ -22,8 +11,6 @@ use crate::{options, parse_list, platform};
 
 const LENGTHS: [usize; 7] = [16, 64, 256, 1024, 4096, 16384, 1 << 20];
 
-/// Hashing before the first measurement, so the core is at its sustained
-/// clock when the first cell is timed.
 const WARMUP: Duration = Duration::from_millis(500);
 
 pub fn main(args: &[String]) -> Result<(), String> {
@@ -191,8 +178,6 @@ pub fn main(args: &[String]) -> Result<(), String> {
     Ok(())
 }
 
-/// Times `iters` hashes of `message` in one loop: the implementation's own
-/// loop if it has one, otherwise a loop here calling `hash`.
 #[inline(never)]
 fn time(imp: &Implementation, message: &[u8], out: &mut [u8], iters: u64) -> Duration {
     let start = Instant::now();
@@ -207,8 +192,6 @@ fn time(imp: &Implementation, message: &[u8], out: &mut [u8], iters: u64) -> Dur
     start.elapsed()
 }
 
-/// The number of hashes for one loop to take at least `min`. The loops it
-/// times also warm caches and branch predictors.
 fn calibrate(imp: &Implementation, message: &[u8], out: &mut [u8], min: Duration) -> u64 {
     let mut iters = 1u64;
     loop {
@@ -221,7 +204,6 @@ fn calibrate(imp: &Implementation, message: &[u8], out: &mut [u8], min: Duration
     }
 }
 
-/// The checked-out commit, with `-dirty` if tracked files differ from it.
 fn commit() -> String {
     let root = concat!(env!("CARGO_MANIFEST_DIR"), "/..");
     let hash = platform::output("git", &["-C", root, "rev-parse", "HEAD"]);
@@ -233,14 +215,12 @@ fn commit() -> String {
     if dirty { format!("{hash}-dirty") } else { hash }
 }
 
-/// `time` as `YYYY-MM-DDTHH:MM:SSZ`.
 fn utc(time: SystemTime) -> String {
     let secs = time
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
         .as_secs();
     let (days, rem) = (secs / 86_400, secs % 86_400);
-    // Civil date from days since 1970-01-01 (Howard Hinnant's algorithm).
     let z = days as i64 + 719_468;
     let era = z.div_euclid(146_097);
     let doe = z - era * 146_097;

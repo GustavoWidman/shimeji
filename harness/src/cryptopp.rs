@@ -1,19 +1,7 @@
-//! Crypto++'s LSH (https://github.com/weidai11/cryptopp), C++ that picks
-//! portable, SSSE3 or AVX2 code from the CPU at run time. `build.rs` builds
-//! the library from the commit `flake.nix` pins and links it with the shim in
-//! `c/cryptopp.cpp`.
-//!
-//! Each entry is named after one of Crypto++'s paths and is available exactly
-//! when Crypto++ reports, through `AlgorithmProvider`, that it takes it.
-//! Crypto++ has no LSH-512-224 class; the shim derives one from its
-//! `LSH512_Base`.
-
 use std::ffi::{CStr, c_char};
 
 use crate::{Family, Implementation};
 
-/// Hashes the message and writes the `outlen`-byte digest; returns -1 for a
-/// digest length it lacks.
 type Export = unsafe extern "C" fn(*const u8, usize, *mut u8, usize) -> i32;
 
 unsafe extern "C" {
@@ -37,7 +25,6 @@ fn lsh512(message: &[u8], out: &mut [u8]) {
     call(cryptopp_lsh512, message, out)
 }
 
-/// The path Crypto++ takes for `family` on this CPU.
 fn path(family: Family) -> &'static str {
     // SAFETY: both return a static NUL-terminated string.
     let path = unsafe {

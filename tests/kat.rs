@@ -1,5 +1,3 @@
-//! Known-answer tests against the Crypto++ LSH test vectors in `refs/kat`.
-
 use shimeji::{Lsh256_224, Lsh256_256, Lsh512_256, Lsh512_384, Lsh512_512};
 
 struct Vector {
@@ -78,8 +76,6 @@ fn hasher(name: &str) -> fn(&[u8], usize) -> Vec<u8> {
     }
 }
 
-/// Checks every vector in `file`, hashing each message whole and in chunks
-/// that straddle block boundaries.
 fn check(file: &str, expected: usize) {
     let vectors = vectors(file);
     assert_eq!(vectors.len(), expected, "{file}: vector count");

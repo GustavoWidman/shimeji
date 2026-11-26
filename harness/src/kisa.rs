@@ -1,6 +1,3 @@
-//! KISA's C implementations, compiled by `build.rs` under the symbol prefix
-//! `kisa_<variant>_`.
-
 use crate::{Family, Implementation};
 
 /// Bit 16 of KISA's `lsh_type` selects LSH-512; the low 16 bits hold the
@@ -18,8 +15,6 @@ fn algtype(family: Family, len: usize) -> u32 {
 #[repr(C, align(32))]
 struct Out([u8; 64]);
 
-/// Calls a KISA `lsh*_repeat`, which runs `lsh*_digest` `iters` times, and
-/// copies the digest into `out`.
 fn call(
     repeat: unsafe extern "C" fn(u32, *const u8, usize, *mut u8, u64) -> u32,
     family: Family,

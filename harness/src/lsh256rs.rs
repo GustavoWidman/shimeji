@@ -1,9 +1,3 @@
-//! The `lsh256` crate
-//! (https://github.com/corp0ratestarts-cmd/LSH-256-Korea-KS-X-3262-RUST),
-//! portable Rust without `unsafe`, a git dependency of the harness pinned by
-//! commit. Its one-shot functions return arrays, but each finalizes into a
-//! `Vec`, so every message costs one heap allocation.
-
 use lsh256::{Lsh256, Lsh512};
 
 use crate::{Family, Implementation};

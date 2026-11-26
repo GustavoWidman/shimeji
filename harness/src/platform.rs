@@ -1,10 +1,7 @@
-//! Thread placement and the facts about the machine that go into a result
-//! header.
-//!
 //! macOS cannot pin a thread to a core, so the benchmark raises the thread to
 //! the user-interactive QoS class, which keeps it on performance cores, and
 //! records the core after every repetition so runs that migrated can be
-//! filtered out. Linux pins the thread to one CPU.
+//! filtered out.
 
 use std::ffi::c_char;
 use std::process::Command;
@@ -80,7 +77,6 @@ pub fn hostname() -> String {
     String::from_utf8_lossy(&buf[..end]).into_owned()
 }
 
-/// The CPU model name.
 pub fn cpu_model() -> String {
     if cfg!(target_os = "macos") {
         output("sysctl", &["-n", "machdep.cpu.brand_string"])
@@ -97,7 +93,6 @@ pub fn cpu_model() -> String {
     }
 }
 
-/// First line of a command's standard output, or an empty string.
 pub fn output(program: &str, args: &[&str]) -> String {
     Command::new(program)
         .args(args)

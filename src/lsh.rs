@@ -1,16 +1,3 @@
-//! The LSH construction, shared by LSH-256 and LSH-512.
-//!
-//! LSH is a wide-pipe Merkle-Damgård hash. A 16-word chaining variable absorbs
-//! 32-word message blocks through `steps` rounds of a mix/permute step, with a
-//! message schedule that expands the block's two 16-word halves into one
-//! 16-word sub-message per step. The two families differ only in word size,
-//! step count, rotation amounts and constants, so one macro defines both.
-
-/// Defines an LSH family: its compression function and its streaming hasher.
-///
-/// `pairs` lists the step-pair indices after the first pair, so that the
-/// compression function is fully unrolled: each step's word permutation then
-/// compiles to register renaming instead of moves.
 macro_rules! lsh {
     (
         $(#[$doc:meta])*
@@ -31,14 +18,11 @@ macro_rules! lsh {
 
         const STEPS: usize = $steps;
         const GAMMA: [u32; 8] = $gamma;
-        /// Rotation amounts of even and odd steps.
         const ALPHA: [u32; 2] = [$alpha_e, $alpha_o];
         const BETA: [u32; 2] = [$beta_e, $beta_o];
         const TAU: [usize; 8] = [3, 2, 0, 1, 7, 4, 5, 6];
         const SIGMA: [usize; 16] = [6, 4, 5, 7, 12, 15, 14, 13, 2, 0, 1, 3, 8, 11, 10, 9];
 
-        /// Step constants: each step's eight words are the previous step's
-        /// words plus themselves rotated left by eight bits.
         const SC: [[$w; 8]; STEPS] = {
             let mut sc: [[$w; 8]; STEPS] = [[0; 8]; STEPS];
             sc[0] = $sc0;
@@ -69,7 +53,6 @@ macro_rules! lsh {
             }
         }
 
-        /// One step: message addition, mix of each column pair, word permutation.
         #[inline(always)]
         fn step(mut s: [$w; 16], m: &[$w; 16], sc: &[$w; 8], alpha: u32, beta: u32) -> [$w; 16] {
             for k in 0..16 {
@@ -88,17 +71,11 @@ macro_rules! lsh {
             core::array::from_fn(|k| s[SIGMA[k]])
         }
 
-        /// A 16-word sub-message of the message schedule, held in whatever
-        /// registers expand it most cheaply.
         pub(crate) trait SubMessage: Copy {
-            /// The next sub-message: `next[l] = newer[l] + older[tau(l)]`, per
-            /// half.
             fn expand(older: Self, newer: &Self) -> Self;
-            /// The 16 words, as the step adds them to the chaining variable.
             fn words(&self) -> [$w; 16];
         }
 
-        /// A sub-message in general-purpose registers.
         impl SubMessage for [$w; 16] {
             #[inline(always)]
             fn expand(older: Self, newer: &Self) -> Self {
@@ -110,7 +87,6 @@ macro_rules! lsh {
             }
         }
 
-        /// The 32 little-endian words of one block.
         #[cfg(any(feature = "kernels", not(all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))))]
         #[inline(always)]
         fn load(block: &[u8]) -> [$w; 32] {
@@ -119,15 +95,12 @@ macro_rules! lsh {
             })
         }
 
-        /// The two halves of a block's 32 words: the first two sub-messages.
         #[cfg(any(feature = "kernels", not(all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))))]
         #[inline(always)]
         fn halves(block: [$w; 32]) -> [[$w; 16]; 2] {
             [core::array::from_fn(|k| block[k]), core::array::from_fn(|k| block[16 + k])]
         }
 
-        /// Absorbs one message block, given as its first two sub-messages,
-        /// into the chaining variable, with the step constants `sc`.
         #[inline(always)]
         fn compress<M: SubMessage>(cv: &mut [$w; 16], [mut even, mut odd]: [M; 2], sc: &[[$w; 8]; STEPS]) {
             let mut s = *cv;
@@ -145,10 +118,8 @@ macro_rules! lsh {
             }
         }
 
-        /// A function that absorbs whole blocks into a chaining variable.
         type Blocks = fn(&mut [$w; 16], &[u8]);
 
-        /// Absorbs whole blocks with the portable compression function.
         #[cfg(any(feature = "kernels", not(all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))))]
         fn portable(cv: &mut [$w; 16], blocks: &[u8]) {
             for block in blocks.chunks_exact(BLOCK) {
@@ -156,8 +127,6 @@ macro_rules! lsh {
             }
         }
 
-        /// Absorbs whole blocks with the portable compression function, the
-        /// message schedule expanded in NEON registers (see `neon.rs`).
         #[cfg(all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))]
         fn neon_schedule(cv: &mut [$w; 16], blocks: &[u8]) {
             for block in blocks.chunks_exact(BLOCK) {
@@ -165,9 +134,6 @@ macro_rules! lsh {
             }
         }
 
-        /// The fastest block function the running CPU supports: the NEON
-        /// message schedule on little-endian aarch64, SIMD code chosen at run
-        /// time on x86-64, the portable code elsewhere.
         #[cfg(all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))]
         #[inline]
         fn fastest() -> Blocks {
@@ -186,9 +152,6 @@ macro_rules! lsh {
             portable
         }
 
-        /// Pads the message's last, partial block `rest`, absorbs it with
-        /// `blocks` and returns the digest.
-        ///
         /// LSH appends a single `0x80` byte and zeros, with no length field,
         /// and always ends with this padded block.
         fn finish<const N: usize>(mut cv: [$w; 16], rest: &[u8], blocks: Blocks) -> [u8; N] {
@@ -254,15 +217,12 @@ macro_rules! lsh {
                 Self::digest_with(data, fastest())
             }
 
-            /// [`digest`](Self::digest) on the portable code, for testing and
-            /// measuring it on CPUs that also run SIMD code.
             #[cfg(feature = "kernels")]
             #[doc(hidden)]
             pub fn digest_portable(data: &[u8]) -> [u8; N] {
                 Self::digest_with(data, portable)
             }
 
-            /// Hashes `data` with `blocks` absorbing whole blocks.
             fn digest_with(data: &[u8], blocks: Blocks) -> [u8; N] {
                 let mut cv = Self::IV;
                 let whole = data.len() / BLOCK * BLOCK;

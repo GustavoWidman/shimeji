@@ -1,7 +1,3 @@
-//! shimeji's one-message SSSE3 and AVX2 code, each called directly rather
-//! than through the run-time choice `digest` makes, so that both are tested
-//! and measured on a CPU that has both.
-
 use crate::{Family, Implementation};
 
 shimeji_hash!(ssse3_lsh256, ssse3_lsh512, digest_ssse3, unwrap);
