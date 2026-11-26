@@ -115,6 +115,7 @@ fn main() {
     lsh_simd(root, &out, &arch, &mut info);
     pbkdf2_lsh(root, &out, &arch, &mut info);
     cryptopp(&manifest, &out, &mut info);
+    digestpp(&manifest, &mut info);
     gokrypto(&manifest, &out, &mut info);
     fs::write(out.join("build-info.txt"), info).unwrap();
 }
@@ -368,6 +369,31 @@ fn cryptopp(manifest: &Path, out: &Path, info: &mut String) {
         writeln!(info, "cxxflags cryptopp: {line}").unwrap();
     }
     writeln!(info, "cxxflags cryptopp shim: {shim}").unwrap();
+}
+
+/// Compiles `c/digestpp.cpp`, which exports digestpp's header-only LSH, with
+/// the flags of the Crypto++ shim and digestpp from `$DIGESTPP_SRC`, which
+/// `flake.nix` pins and patches with `c/digestpp-rotate.patch`.
+fn digestpp(manifest: &Path, info: &mut String) {
+    println!("cargo::rerun-if-env-changed=DIGESTPP_SRC");
+    let src = PathBuf::from(
+        env::var("DIGESTPP_SRC").expect("DIGESTPP_SRC is not set; run cargo from `nix develop`"),
+    );
+    let mut build = cc::Build::new();
+    build
+        .cpp(true)
+        .compiler(CXX)
+        .no_default_flags(true)
+        .warnings(false)
+        .include(&src)
+        .file(manifest.join("c/digestpp.cpp"));
+    for flag in CXXFLAGS {
+        build.flag(flag);
+    }
+    writeln!(info, "digestpp: {}", src.display()).unwrap();
+    writeln!(info, "digestpp patch: harness/c/digestpp-rotate.patch").unwrap();
+    writeln!(info, "cxxflags digestpp shim: {}", command_line(&build)).unwrap();
+    build.compile("digestpp_shim");
 }
 
 /// Builds `go/`, the cgo exports of go-krypto's LSH, as a static C archive

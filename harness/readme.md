@@ -79,6 +79,19 @@ class; the shim derives one from `LSH512_Base` with KISA's algorithm type
 for it. `build.rs` records the source, the make command and the compile
 lines of the LSH files in the result header.
 
+digestpp (https://github.com/kerukuro/digestpp), a header-only C++ hash
+library, is pinned by `flake.nix` and compiled into `c/digestpp.cpp` with
+the Crypto++ shim's flags. its LSH is portable C++ with all six digests,
+registered as `digestpp` on every machine. the shim hashes each message with
+a new hasher, `digestpp::lsh256(256).absorb(msg, len).digest(out, 32)`,
+which first derives the IV with one compression function call on a zero
+block. digestpp's `rotate_left` computes `x >> (32 - n)`, undefined for the
+rotation by 0 in LSH's gamma step, and clang at `-O1` or above then returns
+wrong digests, also for digestpp's own test vectors; `flake.nix` applies
+`c/digestpp-rotate.patch`, which masks the shift count. a C++ loop instead
+of one call per 64-byte message changes its time by less than 0.5% on an
+i9-13900K, so it has no `repeat`.
+
 go-krypto (https://github.com/RyuaNerin/go-krypto, Go with assembly) is
 pinned to v1.3.0 by `go/go.mod` and `go/go.sum`; the first build downloads
 it through the Go module proxy. it is built with Go 1.26, because its amd64

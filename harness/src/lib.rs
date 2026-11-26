@@ -32,6 +32,7 @@ macro_rules! shimeji_hash {
 }
 
 mod cryptopp;
+mod digestpp;
 mod gokrypto;
 mod kisa;
 #[cfg(target_arch = "x86_64")]
@@ -213,6 +214,8 @@ pub static IMPLEMENTATIONS: &[Implementation] = &[
     cryptopp::SSSE3_512,
     cryptopp::AVX2_256,
     cryptopp::AVX2_512,
+    digestpp::LSH256,
+    digestpp::LSH512,
     #[cfg(target_arch = "aarch64")]
     gokrypto::NEON_256,
     #[cfg(target_arch = "aarch64")]
