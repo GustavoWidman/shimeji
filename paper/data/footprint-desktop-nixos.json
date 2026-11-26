@@ -1,0 +1,669 @@
+{
+ "host": "desktop-nixos",
+ "commit": "94a504e1acfe3f3fb245c9617e430cef437049af",
+ "rustc": "rustc 1.102.0-nightly (3ef0c22cd 2026-11-11)",
+ "cc": "clang version 21.1.8",
+ "footprint": [
+  "# footprint: state is the bytes a caller holds between calls; stack is the peak stack of one LSH-256-256 or LSH-512-512 digest of a 1000-byte message, the most of 32 runs, beyond the 8 bytes of calling an empty function the same way"
+ ],
+ "measured": [
+  {
+   "kind": "state",
+   "implementation": "shimeji",
+   "family": "lsh256",
+   "bytes": 200
+  },
+  {
+   "kind": "state",
+   "implementation": "shimeji",
+   "family": "lsh512",
+   "bytes": 392
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "bytes": 200
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "bytes": 392
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-sse2",
+   "family": "lsh256",
+   "bytes": 224
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-sse2",
+   "family": "lsh512",
+   "bytes": 416
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-ssse3",
+   "family": "lsh256",
+   "bytes": 224
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-ssse3",
+   "family": "lsh512",
+   "bytes": 416
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-avx2",
+   "family": "lsh256",
+   "bytes": 224
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-avx2",
+   "family": "lsh512",
+   "bytes": 416
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji",
+   "family": "lsh256",
+   "bytes": 328
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji",
+   "family": "lsh512",
+   "bytes": 600
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji-portable",
+   "family": "lsh256",
+   "bytes": 480
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji-portable",
+   "family": "lsh512",
+   "bytes": 856
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji-ssse3",
+   "family": "lsh256",
+   "bytes": 312
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji-ssse3",
+   "family": "lsh512",
+   "bytes": 808
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji-avx2",
+   "family": "lsh256",
+   "bytes": 288
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji-avx2",
+   "family": "lsh512",
+   "bytes": 584
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "bytes": 608
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "bytes": 992
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-sse2",
+   "family": "lsh256",
+   "bytes": 544
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-sse2",
+   "family": "lsh512",
+   "bytes": 976
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-ssse3",
+   "family": "lsh256",
+   "bytes": 480
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-ssse3",
+   "family": "lsh512",
+   "bytes": 976
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-avx2",
+   "family": "lsh256",
+   "bytes": 576
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-avx2",
+   "family": "lsh512",
+   "bytes": 768
+  }
+ ],
+ "functions": [
+  {
+   "implementation": "shimeji-portable",
+   "family": "lsh256",
+   "symbol": "_RNvNtCs5aXUSIxiH7k_7shimeji6lsh2568portable",
+   "bytes": 13298,
+   "mnemonics": {
+    "mov": 1413,
+    "add": 1025,
+    "xor": 640,
+    "rol": 572,
+    "push": 6,
+    "pop": 6,
+    "sub": 2,
+    "movabs": 1,
+    "and": 1,
+    "je": 1,
+    "movq": 1,
+    "nop": 1,
+    "cmp": 1,
+    "jne": 1,
+    "ret": 1
+   }
+  },
+  {
+   "implementation": "shimeji-portable",
+   "family": "lsh512",
+   "symbol": "_RNvNtCs5aXUSIxiH7k_7shimeji6lsh5128portable",
+   "bytes": 19308,
+   "mnemonics": {
+    "mov": 1557,
+    "add": 1106,
+    "xor": 688,
+    "rol": 644,
+    "movabs": 225,
+    "push": 6,
+    "pop": 6,
+    "sub": 1,
+    "and": 1,
+    "je": 1,
+    "movq": 1,
+    "nopl": 1,
+    "cmp": 1,
+    "jne": 1,
+    "ret": 1
+   }
+  },
+  {
+   "implementation": "shimeji-avx2",
+   "family": "lsh256",
+   "symbol": "_RNvNtNtCs5aXUSIxiH7k_7shimeji6lsh2563x8611blocks_avx2",
+   "bytes": 5087,
+   "mnemonics": {
+    "vpaddd": 282,
+    "vpshufd": 170,
+    "vpxor": 160,
+    "vpsrld": 104,
+    "vpor": 104,
+    "vpslld": 78,
+    "vpshufb": 52,
+    "vmovdqa": 21,
+    "vmovdqu": 16,
+    "movabs": 1,
+    "and": 1,
+    "je": 1,
+    "add": 1,
+    "nopl": 1,
+    "sub": 1,
+    "cmp": 1,
+    "jne": 1,
+    "ret": 1
+   }
+  },
+  {
+   "implementation": "shimeji-ssse3",
+   "family": "lsh256",
+   "symbol": "_RNvNtNtCs5aXUSIxiH7k_7shimeji6lsh2563x8612blocks_ssse3",
+   "bytes": 5769,
+   "mnemonics": {
+    "paddd": 282,
+    "pshufd": 170,
+    "pxor": 160,
+    "movdqa": 123,
+    "psrld": 104,
+    "por": 104,
+    "pslld": 78,
+    "pshufb": 52,
+    "movdqu": 16,
+    "movabs": 1,
+    "and": 1,
+    "je": 1,
+    "add": 1,
+    "nopl": 1,
+    "sub": 1,
+    "cmp": 1,
+    "jne": 1,
+    "ret": 1
+   }
+  },
+  {
+   "implementation": "shimeji-avx2",
+   "family": "lsh512",
+   "symbol": "_RNvNtNtCs5aXUSIxiH7k_7shimeji6lsh5123x8611blocks_avx2",
+   "bytes": 5445,
+   "mnemonics": {
+    "vpaddq": 276,
+    "vpermq": 194,
+    "vpxor": 172,
+    "vpsrlq": 112,
+    "vpsllq": 112,
+    "vpor": 112,
+    "vpshufb": 56,
+    "vmovdqa": 18,
+    "vmovdqu": 17,
+    "add": 2,
+    "movabs": 1,
+    "and": 1,
+    "je": 1,
+    "data16": 1,
+    "cmp": 1,
+    "jne": 1,
+    "vzeroupper": 1,
+    "ret": 1
+   }
+  },
+  {
+   "implementation": "shimeji-ssse3",
+   "family": "lsh512",
+   "symbol": "_RNvNtNtNtCs5aXUSIxiH7k_7shimeji6lsh5123x866narrow6blocks",
+   "bytes": 16279,
+   "mnemonics": {
+    "movdqa": 778,
+    "paddq": 552,
+    "pxor": 290,
+    "psrlq": 224,
+    "psllq": 224,
+    "por": 224,
+    "punpcklqdq": 112,
+    "pshufb": 112,
+    "palignr": 108,
+    "punpckhqdq": 56,
+    "pshufhw": 56,
+    "pshufd": 54,
+    "movq": 39,
+    "movdqu": 30,
+    "movsd": 28,
+    "shufps": 28,
+    "xorpd": 27,
+    "xorps": 27,
+    "add": 3,
+    "movaps": 3,
+    "movabs": 1,
+    "and": 1,
+    "je": 1,
+    "sub": 1,
+    "nopl": 1,
+    "movupd": 1,
+    "movapd": 1,
+    "movups": 1,
+    "cmp": 1,
+    "jne": 1,
+    "jmp": 1,
+    "ret": 1
+   }
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "init",
+   "symbol": "kisa_ref_lsh256_init",
+   "bytes": 881
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "update",
+   "symbol": "kisa_ref_lsh256_update",
+   "bytes": 6126
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "final",
+   "symbol": "kisa_ref_lsh256_final",
+   "bytes": 3137
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "digest",
+   "symbol": "kisa_ref_lsh256_digest",
+   "bytes": 94
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "repeat",
+   "symbol": "kisa_ref_lsh256_repeat",
+   "bytes": 144
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "context_size",
+   "symbol": "kisa_ref_lsh256_context_size",
+   "bytes": 11
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "init",
+   "symbol": "kisa_ref_lsh512_init",
+   "bytes": 1238
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "update",
+   "symbol": "kisa_ref_lsh512_update",
+   "bytes": 7711
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "final",
+   "symbol": "kisa_ref_lsh512_final",
+   "bytes": 3971
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "digest",
+   "symbol": "kisa_ref_lsh512_digest",
+   "bytes": 94
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "repeat",
+   "symbol": "kisa_ref_lsh512_repeat",
+   "bytes": 144
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "context_size",
+   "symbol": "kisa_ref_lsh512_context_size",
+   "bytes": 11
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh256",
+   "function": "init",
+   "symbol": "kisa_sse2_lsh256_init",
+   "bytes": 1039
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh256",
+   "function": "update",
+   "symbol": "kisa_sse2_lsh256_update",
+   "bytes": 4478
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh256",
+   "function": "final",
+   "symbol": "kisa_sse2_lsh256_final",
+   "bytes": 2457
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh256",
+   "function": "digest",
+   "symbol": "kisa_sse2_lsh256_digest",
+   "bytes": 1124
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh256",
+   "function": "repeat",
+   "symbol": "kisa_sse2_lsh256_repeat",
+   "bytes": 97
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh256",
+   "function": "context_size",
+   "symbol": "kisa_sse2_lsh256_context_size",
+   "bytes": 11
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh512",
+   "function": "init",
+   "symbol": "kisa_sse2_lsh512_init",
+   "bytes": 1617
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh512",
+   "function": "update",
+   "symbol": "kisa_sse2_lsh512_update",
+   "bytes": 6968
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh512",
+   "function": "final",
+   "symbol": "kisa_sse2_lsh512_final",
+   "bytes": 3428
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh512",
+   "function": "digest",
+   "symbol": "kisa_sse2_lsh512_digest",
+   "bytes": 83
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh512",
+   "function": "repeat",
+   "symbol": "kisa_sse2_lsh512_repeat",
+   "bytes": 143
+  },
+  {
+   "implementation": "kisa-sse2",
+   "family": "lsh512",
+   "function": "context_size",
+   "symbol": "kisa_sse2_lsh512_context_size",
+   "bytes": 11
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh256",
+   "function": "init",
+   "symbol": "kisa_ssse3_lsh256_init",
+   "bytes": 552
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh256",
+   "function": "update",
+   "symbol": "kisa_ssse3_lsh256_update",
+   "bytes": 2442
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh256",
+   "function": "final",
+   "symbol": "kisa_ssse3_lsh256_final",
+   "bytes": 1341
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh256",
+   "function": "digest",
+   "symbol": "kisa_ssse3_lsh256_digest",
+   "bytes": 637
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh256",
+   "function": "repeat",
+   "symbol": "kisa_ssse3_lsh256_repeat",
+   "bytes": 958
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh256",
+   "function": "context_size",
+   "symbol": "kisa_ssse3_lsh256_context_size",
+   "bytes": 11
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh512",
+   "function": "init",
+   "symbol": "kisa_ssse3_lsh512_init",
+   "bytes": 1315
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh512",
+   "function": "update",
+   "symbol": "kisa_ssse3_lsh512_update",
+   "bytes": 5568
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh512",
+   "function": "final",
+   "symbol": "kisa_ssse3_lsh512_final",
+   "bytes": 2825
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh512",
+   "function": "digest",
+   "symbol": "kisa_ssse3_lsh512_digest",
+   "bytes": 83
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh512",
+   "function": "repeat",
+   "symbol": "kisa_ssse3_lsh512_repeat",
+   "bytes": 143
+  },
+  {
+   "implementation": "kisa-ssse3",
+   "family": "lsh512",
+   "function": "context_size",
+   "symbol": "kisa_ssse3_lsh512_context_size",
+   "bytes": 11
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh256",
+   "function": "init",
+   "symbol": "kisa_avx2_lsh256_init",
+   "bytes": 381
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh256",
+   "function": "update",
+   "symbol": "kisa_avx2_lsh256_update",
+   "bytes": 1649
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh256",
+   "function": "final",
+   "symbol": "kisa_avx2_lsh256_final",
+   "bytes": 869
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh256",
+   "function": "digest",
+   "symbol": "kisa_avx2_lsh256_digest",
+   "bytes": 1157
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh256",
+   "function": "repeat",
+   "symbol": "kisa_avx2_lsh256_repeat",
+   "bytes": 97
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh256",
+   "function": "context_size",
+   "symbol": "kisa_avx2_lsh256_context_size",
+   "bytes": 11
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh512",
+   "function": "init",
+   "symbol": "kisa_avx2_lsh512_init",
+   "bytes": 749
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh512",
+   "function": "update",
+   "symbol": "kisa_avx2_lsh512_update",
+   "bytes": 2369
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh512",
+   "function": "final",
+   "symbol": "kisa_avx2_lsh512_final",
+   "bytes": 1323
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh512",
+   "function": "digest",
+   "symbol": "kisa_avx2_lsh512_digest",
+   "bytes": 707
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh512",
+   "function": "repeat",
+   "symbol": "kisa_avx2_lsh512_repeat",
+   "bytes": 97
+  },
+  {
+   "implementation": "kisa-avx2",
+   "family": "lsh512",
+   "function": "context_size",
+   "symbol": "kisa_avx2_lsh512_context_size",
+   "bytes": 11
+  }
+ ]
+}

@@ -1,0 +1,375 @@
+{
+ "host": "altar",
+ "commit": "94a504e1acfe3f3fb245c9617e430cef437049af",
+ "rustc": "rustc 1.102.0-nightly (3ef0c22cd 2026-11-11)",
+ "cc": "clang version 21.1.8",
+ "footprint": [
+  "# footprint: state is the bytes a caller holds between calls; stack is the peak stack of one LSH-256-256 or LSH-512-512 digest of a 1000-byte message, the most of 32 runs, beyond the 0 bytes of calling an empty function the same way"
+ ],
+ "measured": [
+  {
+   "kind": "state",
+   "implementation": "shimeji",
+   "family": "lsh256",
+   "bytes": 200
+  },
+  {
+   "kind": "state",
+   "implementation": "shimeji",
+   "family": "lsh512",
+   "bytes": 392
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "bytes": 200
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "bytes": 392
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-neon",
+   "family": "lsh256",
+   "bytes": 224
+  },
+  {
+   "kind": "state",
+   "implementation": "kisa-neon",
+   "family": "lsh512",
+   "bytes": 416
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji",
+   "family": "lsh256",
+   "bytes": 432
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji",
+   "family": "lsh512",
+   "bytes": 720
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji-portable",
+   "family": "lsh256",
+   "bytes": 568
+  },
+  {
+   "kind": "stack",
+   "implementation": "shimeji-portable",
+   "family": "lsh512",
+   "bytes": 960
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "bytes": 656
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "bytes": 1008
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-neon",
+   "family": "lsh256",
+   "bytes": 544
+  },
+  {
+   "kind": "stack",
+   "implementation": "kisa-neon",
+   "family": "lsh512",
+   "bytes": 944
+  }
+ ],
+ "functions": [
+  {
+   "implementation": "shimeji",
+   "family": "lsh256",
+   "symbol": "__RNvNtCsevg5NfHwLF7_7shimeji6lsh25613neon_schedule",
+   "bytes": 10044,
+   "mnemonics": {
+    "eor": 640,
+    "add": 628,
+    "ldp": 228,
+    "mov": 208,
+    "movk": 208,
+    "ror": 208,
+    "ext.16b": 100,
+    "add.4s": 100,
+    "stp.q": 54,
+    "rev64.4s": 50,
+    "ldr": 33,
+    "str": 27,
+    "stp": 15,
+    "ldp.q": 4,
+    "tst": 1,
+    "b.eq": 1,
+    "sub": 1,
+    "and": 1,
+    "neg": 1,
+    "adds": 1,
+    "b.ne": 1,
+    "ret": 1
+   }
+  },
+  {
+   "implementation": "shimeji-portable",
+   "family": "lsh256",
+   "symbol": "__RNvNtCsevg5NfHwLF7_7shimeji6lsh2568portable",
+   "bytes": 13220,
+   "mnemonics": {
+    "add": 1026,
+    "eor": 640,
+    "ldr": 444,
+    "str": 424,
+    "mov": 238,
+    "movk": 208,
+    "ror": 208,
+    "ldp": 68,
+    "stp": 41,
+    "tst": 1,
+    "b.eq": 1,
+    "sub": 1,
+    "and": 1,
+    "neg": 1,
+    "adds": 1,
+    "b.ne": 1,
+    "ret": 1
+   }
+  },
+  {
+   "implementation": "shimeji",
+   "family": "lsh512",
+   "symbol": "__RNvNtCsevg5NfHwLF7_7shimeji6lsh51213neon_schedule",
+   "bytes": 10688,
+   "mnemonics": {
+    "add": 729,
+    "eor": 688,
+    "ldp": 277,
+    "ror": 224,
+    "add.2d": 216,
+    "ldr": 196,
+    "ext.16b": 162,
+    "stp.q": 116,
+    "str": 31,
+    "stp": 15,
+    "ldp.q": 8,
+    "sub": 1,
+    "tst": 1,
+    "b.eq": 1,
+    "and": 1,
+    "neg": 1,
+    "adr": 1,
+    "nop": 1,
+    "adds": 1,
+    "b.ne": 1,
+    "ret": 1
+   }
+  },
+  {
+   "implementation": "shimeji-portable",
+   "family": "lsh512",
+   "symbol": "__RNvNtCsevg5NfHwLF7_7shimeji6lsh5128portable",
+   "bytes": 13888,
+   "mnemonics": {
+    "add": 1107,
+    "ldr": 767,
+    "eor": 688,
+    "str": 488,
+    "ror": 224,
+    "ldp": 93,
+    "stp": 48,
+    "mov": 36,
+    "sub": 1,
+    "tst": 1,
+    "b.eq": 1,
+    "and": 1,
+    "neg": 1,
+    "adr": 1,
+    "nop": 1,
+    "adds": 1,
+    "b.ne": 1,
+    "ret": 1
+   }
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "init",
+   "symbol": "_kisa_ref_lsh256_init",
+   "bytes": 760
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "update",
+   "symbol": "_kisa_ref_lsh256_update",
+   "bytes": 4900
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "final",
+   "symbol": "_kisa_ref_lsh256_final",
+   "bytes": 2536
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "digest",
+   "symbol": "_kisa_ref_lsh256_digest",
+   "bytes": 144
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "repeat",
+   "symbol": "_kisa_ref_lsh256_repeat",
+   "bytes": 200
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh256",
+   "function": "context_size",
+   "symbol": "_kisa_ref_lsh256_context_size",
+   "bytes": 20
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "init",
+   "symbol": "_kisa_ref_lsh512_init",
+   "bytes": 912
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "update",
+   "symbol": "_kisa_ref_lsh512_update",
+   "bytes": 5236
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "final",
+   "symbol": "_kisa_ref_lsh512_final",
+   "bytes": 2720
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "digest",
+   "symbol": "_kisa_ref_lsh512_digest",
+   "bytes": 144
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "repeat",
+   "symbol": "_kisa_ref_lsh512_repeat",
+   "bytes": 200
+  },
+  {
+   "implementation": "kisa-ref",
+   "family": "lsh512",
+   "function": "context_size",
+   "symbol": "_kisa_ref_lsh512_context_size",
+   "bytes": 20
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh256",
+   "function": "init",
+   "symbol": "_kisa_neon_lsh256_init",
+   "bytes": 1176
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh256",
+   "function": "update",
+   "symbol": "_kisa_neon_lsh256_update",
+   "bytes": 1444
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh256",
+   "function": "final",
+   "symbol": "_kisa_neon_lsh256_final",
+   "bytes": 860
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh256",
+   "function": "digest",
+   "symbol": "_kisa_neon_lsh256_digest",
+   "bytes": 144
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh256",
+   "function": "repeat",
+   "symbol": "_kisa_neon_lsh256_repeat",
+   "bytes": 200
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh256",
+   "function": "context_size",
+   "symbol": "_kisa_neon_lsh256_context_size",
+   "bytes": 20
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh512",
+   "function": "init",
+   "symbol": "_kisa_neon_lsh512_init",
+   "bytes": 1464
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh512",
+   "function": "update",
+   "symbol": "_kisa_neon_lsh512_update",
+   "bytes": 2304
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh512",
+   "function": "final",
+   "symbol": "_kisa_neon_lsh512_final",
+   "bytes": 1296
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh512",
+   "function": "digest",
+   "symbol": "_kisa_neon_lsh512_digest",
+   "bytes": 144
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh512",
+   "function": "repeat",
+   "symbol": "_kisa_neon_lsh512_repeat",
+   "bytes": 200
+  },
+  {
+   "implementation": "kisa-neon",
+   "family": "lsh512",
+   "function": "context_size",
+   "symbol": "_kisa_neon_lsh512_context_size",
+   "bytes": 20
+  }
+ ]
+}
