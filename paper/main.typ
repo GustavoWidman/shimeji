@@ -28,6 +28,7 @@
       email: "bryan.ferreira@prof.inteli.edu.br",
     ),
   ),
+  abstract: include "sections/abstract.typ",
   index-terms: ([LSH], [KS X 3262], [hash functions], [SIMD], [Rust]),
   bibliography: bibliography("refs.bib", style: "ieee"),
 )
@@ -38,9 +39,13 @@
 #show regex("\\w+\\+\\+"): box
 #show table.cell: set text(size: 8pt)
 #set table(inset: (x: 3pt, y: 2pt))
+#show table: set par(justify: false)
 #set math.equation(numbering: none)
 #show figure.where(kind: table): set figure.caption(position: top)
 
 #include "sections/intro.typ"
 #include "sections/lsh.typ"
 #include "sections/related.typ"
+#include "sections/implementation.typ"
+#include "sections/method.typ"
+#include "sections/results.typ"
