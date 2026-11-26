@@ -22,6 +22,7 @@ macro_rules! lsh {
         gamma: $gamma:expr,
         sc0: $sc0:expr,
         ivs: { $($n:literal => $iv:expr),+ $(,)? },
+        neon_message: $neon_message:ty,
     ) => {
         const WORD: usize = core::mem::size_of::<$w>();
 
@@ -87,37 +88,60 @@ macro_rules! lsh {
             core::array::from_fn(|k| s[SIGMA[k]])
         }
 
-        /// Next sub-message: `next[l] = newer[l] + older[tau(l)]`, per half.
-        #[inline(always)]
-        fn expand(older: [$w; 16], newer: &[$w; 16]) -> [$w; 16] {
-            core::array::from_fn(|k| newer[k].wrapping_add(older[TAU[k % 8] + k / 8 * 8]))
+        /// A 16-word sub-message of the message schedule, held in whatever
+        /// registers expand it most cheaply.
+        pub(crate) trait SubMessage: Copy {
+            /// The next sub-message: `next[l] = newer[l] + older[tau(l)]`, per
+            /// half.
+            fn expand(older: Self, newer: &Self) -> Self;
+            /// The 16 words, as the step adds them to the chaining variable.
+            fn words(&self) -> [$w; 16];
         }
 
+        /// A sub-message in general-purpose registers.
+        impl SubMessage for [$w; 16] {
+            #[inline(always)]
+            fn expand(older: Self, newer: &Self) -> Self {
+                core::array::from_fn(|k| newer[k].wrapping_add(older[TAU[k % 8] + k / 8 * 8]))
+            }
+            #[inline(always)]
+            fn words(&self) -> [$w; 16] {
+                *self
+            }
+        }
+
+        /// The 32 little-endian words of one block.
+        #[cfg(any(feature = "kernels", not(all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))))]
         #[inline(always)]
-        fn load(bytes: &[u8]) -> [$w; 16] {
+        fn load(block: &[u8]) -> [$w; 32] {
             core::array::from_fn(|k| {
-                <$w>::from_le_bytes(bytes[WORD * k..WORD * (k + 1)].try_into().unwrap())
+                <$w>::from_le_bytes(block[WORD * k..WORD * (k + 1)].try_into().unwrap())
             })
         }
 
-        /// Absorbs one message block into the chaining variable, with the
-        /// step constants `sc`.
+        /// The two halves of a block's 32 words: the first two sub-messages.
+        #[cfg(any(feature = "kernels", not(all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))))]
         #[inline(always)]
-        fn compress(cv: &mut [$w; 16], block: &[u8], sc: &[[$w; 8]; STEPS]) {
-            let mut even = load(&block[..BLOCK / 2]);
-            let mut odd = load(&block[BLOCK / 2..]);
+        fn halves(block: [$w; 32]) -> [[$w; 16]; 2] {
+            [core::array::from_fn(|k| block[k]), core::array::from_fn(|k| block[16 + k])]
+        }
+
+        /// Absorbs one message block, given as its first two sub-messages,
+        /// into the chaining variable, with the step constants `sc`.
+        #[inline(always)]
+        fn compress<M: SubMessage>(cv: &mut [$w; 16], [mut even, mut odd]: [M; 2], sc: &[[$w; 8]; STEPS]) {
             let mut s = *cv;
-            s = step(s, &even, &sc[0], ALPHA[0], BETA[0]);
-            s = step(s, &odd, &sc[1], ALPHA[1], BETA[1]);
+            s = step(s, &even.words(), &sc[0], ALPHA[0], BETA[0]);
+            s = step(s, &odd.words(), &sc[1], ALPHA[1], BETA[1]);
             $(
-                even = expand(even, &odd);
-                s = step(s, &even, &sc[2 * $pair], ALPHA[0], BETA[0]);
-                odd = expand(odd, &even);
-                s = step(s, &odd, &sc[2 * $pair + 1], ALPHA[1], BETA[1]);
+                even = M::expand(even, &odd);
+                s = step(s, &even.words(), &sc[2 * $pair], ALPHA[0], BETA[0]);
+                odd = M::expand(odd, &even);
+                s = step(s, &odd.words(), &sc[2 * $pair + 1], ALPHA[1], BETA[1]);
             )+
-            even = expand(even, &odd);
+            let last = M::expand(even, &odd).words();
             for k in 0..16 {
-                cv[k] = s[k] ^ even[k];
+                cv[k] = s[k] ^ last[k];
             }
         }
 
@@ -125,21 +149,38 @@ macro_rules! lsh {
         type Blocks = fn(&mut [$w; 16], &[u8]);
 
         /// Absorbs whole blocks with the portable compression function.
+        #[cfg(any(feature = "kernels", not(all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))))]
         fn portable(cv: &mut [$w; 16], blocks: &[u8]) {
             for block in blocks.chunks_exact(BLOCK) {
-                compress(cv, block, sc());
+                compress(cv, halves(load(block)), sc());
             }
         }
 
-        /// The fastest block function the running CPU supports: SIMD code
-        /// chosen at run time on x86-64.
+        /// Absorbs whole blocks with the portable compression function, the
+        /// message schedule expanded in NEON registers (see `neon.rs`).
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))]
+        fn neon_schedule(cv: &mut [$w; 16], blocks: &[u8]) {
+            for block in blocks.chunks_exact(BLOCK) {
+                compress(cv, <$neon_message>::load(block), sc());
+            }
+        }
+
+        /// The fastest block function the running CPU supports: the NEON
+        /// message schedule on little-endian aarch64, SIMD code chosen at run
+        /// time on x86-64, the portable code elsewhere.
+        #[cfg(all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))]
+        #[inline]
+        fn fastest() -> Blocks {
+            neon_schedule
+        }
+
         #[cfg(target_arch = "x86_64")]
         #[inline]
         fn fastest() -> Blocks {
             x86::fastest().unwrap_or(portable)
         }
 
-        #[cfg(not(target_arch = "x86_64"))]
+        #[cfg(not(any(target_arch = "x86_64", all(target_arch = "aarch64", target_feature = "neon", target_endian = "little"))))]
         #[inline]
         fn fastest() -> Blocks {
             portable

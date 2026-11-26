@@ -10,6 +10,12 @@
 mod lsh;
 pub mod lsh256;
 pub mod lsh512;
+#[cfg(all(
+    target_arch = "aarch64",
+    target_feature = "neon",
+    target_endian = "little"
+))]
+mod neon;
 #[cfg(target_arch = "x86_64")]
 mod x86;
 

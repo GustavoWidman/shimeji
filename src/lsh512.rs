@@ -38,7 +38,14 @@ crate::lsh::lsh! {
             0x4981f5e570147e80, 0xd00c4490ca7d3e30, 0x5d73940c0e4ae1ec, 0x894085e2edb2d819,
         ],
     },
+    neon_message: neon::Message,
 }
 
+#[cfg(all(
+    target_arch = "aarch64",
+    target_feature = "neon",
+    target_endian = "little"
+))]
+mod neon;
 #[cfg(target_arch = "x86_64")]
 mod x86;
