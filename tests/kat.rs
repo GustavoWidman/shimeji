@@ -1,4 +1,8 @@
-use shimeji::{Lsh256_224, Lsh256_256, Lsh512_256, Lsh512_384, Lsh512_512};
+use shimeji::{Lsh256_224, Lsh256_256, Lsh512_256, Lsh512_384, Lsh512_512, lsh256, lsh512};
+
+mod common;
+
+use common::SplitMix64;
 
 struct Vector {
     name: String,
@@ -53,41 +57,103 @@ fn vectors(file: &str) -> Vec<Vector> {
     out
 }
 
-macro_rules! chunked {
-    ($hasher:ty) => {
-        |message: &[u8], chunk: usize| {
-            let mut hasher = <$hasher>::new();
-            for part in message.chunks(chunk) {
-                hasher.update(part);
-            }
-            hasher.finalize().to_vec()
+/// The paths that hash one digest: `digest` and the streaming hasher fed one
+/// piece per `update` call.
+struct Paths {
+    block: usize,
+    digest: fn(&[u8]) -> Vec<u8>,
+    stream: fn(&[&[u8]]) -> Vec<u8>,
+}
+
+macro_rules! paths {
+    ($hasher:ty, $family:ident) => {
+        Paths {
+            block: $family::BLOCK,
+            digest: |message| <$hasher>::digest(message).to_vec(),
+            stream: |pieces| {
+                let mut hasher = <$hasher>::new();
+                for piece in pieces {
+                    hasher.update(piece);
+                }
+                hasher.finalize().to_vec()
+            },
         }
     };
 }
 
-fn hasher(name: &str) -> fn(&[u8], usize) -> Vec<u8> {
+fn paths(name: &str) -> Paths {
     match name {
-        "LSH-224" => chunked!(Lsh256_224),
-        "LSH-256" => chunked!(Lsh256_256),
-        "LSH-384" => chunked!(Lsh512_384),
-        "LSH-512" => chunked!(Lsh512_512),
-        "LSH-512-256" => chunked!(Lsh512_256),
+        "LSH-224" => paths!(Lsh256_224, lsh256),
+        "LSH-256" => paths!(Lsh256_256, lsh256),
+        "LSH-384" => paths!(Lsh512_384, lsh512),
+        "LSH-512" => paths!(Lsh512_512, lsh512),
+        "LSH-512-256" => paths!(Lsh512_256, lsh512),
         other => panic!("no hasher for {other}"),
     }
+}
+
+/// Split sequences per vector for the streaming hasher.
+const SPLITS: usize = 8;
+
+/// The seed of the split sequences: `KAT_SEED` (decimal or `0x` hex) if set.
+fn seed() -> u64 {
+    match std::env::var("KAT_SEED") {
+        Ok(v) => match v.strip_prefix("0x") {
+            Some(hex) => u64::from_str_radix(hex, 16).unwrap(),
+            None => v.parse().unwrap(),
+        },
+        Err(_) => 0x6b61_745f_7370_6c74,
+    }
+}
+
+/// Offsets that cut a `len`-byte message into the pieces of one streaming
+/// pass: ascending, from 0 to `len`, so each pair of neighbours bounds one
+/// `update`. A repeated offset is an empty update. About half of the cuts
+/// land within two bytes of a multiple of `block`.
+fn cuts(rng: &mut SplitMix64, len: usize, block: usize) -> Vec<usize> {
+    let mut cuts = vec![0, len];
+    for _ in 0..rng.below(12) {
+        let cut = match rng.below(4) {
+            0 => rng.below(len + 1),
+            1 => cuts[rng.below(cuts.len())],
+            _ => (rng.below(len / block + 2) * block + rng.below(5))
+                .saturating_sub(2)
+                .min(len),
+        };
+        cuts.push(cut);
+    }
+    cuts.sort_unstable();
+    cuts
 }
 
 fn check(file: &str, expected: usize) {
     let vectors = vectors(file);
     assert_eq!(vectors.len(), expected, "{file}: vector count");
+    let seed = seed();
+    let mut rng = SplitMix64(seed);
     for v in &vectors {
-        let hash = hasher(&v.name);
-        for chunk in [usize::MAX, 1, 3, 127, 128, 129, 255, 256, 257] {
+        let paths = paths(&v.name);
+        let len = v.message.len();
+        assert_eq!(
+            (paths.digest)(&v.message),
+            v.digest,
+            "{} on {len} bytes",
+            v.name
+        );
+        assert_eq!(
+            (paths.stream)(&[&v.message]),
+            v.digest,
+            "{} on {len} bytes in one update",
+            v.name
+        );
+        for _ in 0..SPLITS {
+            let cuts = cuts(&mut rng, len, paths.block);
+            let pieces: Vec<&[u8]> = cuts.windows(2).map(|w| &v.message[w[0]..w[1]]).collect();
             assert_eq!(
-                hash(&v.message, chunk),
+                (paths.stream)(&pieces),
                 v.digest,
-                "{} on {} bytes in chunks of {chunk}",
-                v.name,
-                v.message.len()
+                "{} on {len} bytes in updates cut at {cuts:?} (KAT_SEED={seed:#x})",
+                v.name
             );
         }
     }
