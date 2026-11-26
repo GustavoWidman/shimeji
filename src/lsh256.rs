@@ -2,6 +2,16 @@
 
 crate::lsh::lsh! {
     /// LSH-256 with an `N`-byte digest: 28 (LSH-256-224) or 32 (LSH-256-256).
+    ///
+    /// ```
+    /// assert_eq!(shimeji::Lsh256::<28>::digest(b"abc").len(), 28);
+    /// ```
+    ///
+    /// Any other length is a compile-time error:
+    ///
+    /// ```compile_fail,E0080
+    /// let digest = shimeji::Lsh256::<33>::digest(b"abc");
+    /// ```
     hasher: Lsh256,
     word: u32,
     steps: 26,
