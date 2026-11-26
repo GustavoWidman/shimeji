@@ -2,7 +2,6 @@
 set -euo pipefail
 
 supercop=200cd30ca1f501463bd5cdd3da115a20d688d8fb
-cryptopp=5873a73a231c95771f5bbf3466a484952fb22780
 lshsimd=7bf958ff72e2bc0bb1482b4b29bd22370cd99c9c
 
 refs=$(cd "$(dirname "$0")" && pwd)
@@ -22,8 +21,10 @@ for alg in lsh256 lsh512; do
   done
 done
 
+: "${CRYPTOPP_SRC:?run from nix develop, which points CRYPTOPP_SRC at the Crypto++ commit flake.nix pins}"
+mkdir -p kat
 for file in lsh256.txt lsh512.txt lsh512_256.txt; do
-  fetch "https://raw.githubusercontent.com/weidai11/cryptopp/$cryptopp/TestVectors/$file" "kat/$file"
+  install -m 644 "$CRYPTOPP_SRC/TestVectors/$file" "kat/$file"
 done
 
 lshsimd_url=https://raw.githubusercontent.com/JuYoungjin/LSH-SIMD-Implementation/$lshsimd

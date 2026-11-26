@@ -10,7 +10,8 @@ against `SHA256SUMS`. nothing here is compiled into the crate.
   fetched. the code is copyright 2016 NSR (National Security Research
   Institute) under the MIT license, whose notice heads every file.
 - `kat/` holds the LSH test vectors from Crypto++
-  (https://github.com/weidai11/cryptopp, `TestVectors/`): LSH-256-224,
+  (https://github.com/weidai11/cryptopp, `TestVectors/`), copied from the
+  commit `flake.nix` pins: LSH-256-224,
   LSH-256-256, LSH-512-384, LSH-512-512 and LSH-512-256. Crypto++ places
   its individual files in the public domain.
 - `lsh-simd/` is the code of Kim, Jung, Ju and Song, "Fast Implementation
