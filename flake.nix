@@ -72,6 +72,12 @@
             # from Go slices; Go 1.27 places those slices' arrays at 8-byte
             # alignment and the loads fault. Go 1.26 aligns them.
             go_1_26
+            # paper/analysis: medians, bootstrap intervals and figures from
+            # the result files.
+            (python3.withPackages (ps: [
+              ps.matplotlib
+              ps.numpy
+            ]))
             typst
           ];
         in
