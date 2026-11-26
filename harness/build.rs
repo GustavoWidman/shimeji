@@ -20,7 +20,14 @@ const VARIANTS: &[(&str, Option<&str>, &[&str])] = &[
 ];
 
 const FAMILIES: &[&str] = &["lsh256", "lsh512"];
-const FUNCTIONS: &[&str] = &["init", "update", "final", "digest", "repeat"];
+const FUNCTIONS: &[&str] = &[
+    "init",
+    "update",
+    "final",
+    "digest",
+    "repeat",
+    "context_size",
+];
 const COMPILER: &str = "clang";
 
 fn main() {
@@ -79,7 +86,9 @@ fn main() {
                  \tlsh_err err = LSH_SUCCESS;\n\
                  \tfor (unsigned long long i = 0; i < iters && err == LSH_SUCCESS; i++)\n\
                  \t\terr = {family}_digest(algtype, data, databitlen, hashval);\n\
-                 \treturn err;\n}}"
+                 \treturn err;\n}}\n\
+                 size_t {family}_context_size(void) {{ return sizeof(struct {}_Context); }}",
+                family.to_uppercase()
             )
             .unwrap();
             let file = out.join(format!("{name}.c"));

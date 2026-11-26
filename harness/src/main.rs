@@ -1,5 +1,6 @@
 mod bench;
 mod counters;
+mod footprint;
 mod platform;
 mod summary;
 
@@ -20,13 +21,19 @@ usage:
 
   Prints the median and a 95% bootstrap interval per (digest, length,
   implementation), and the speedup over --baseline (default kisa-ref).
-  --cpus keeps only repetitions that ended on the listed CPUs.";
+  --cpus keeps only repetitions that ended on the listed CPUs.
+
+  harness footprint
+
+  Prints, for shimeji's and KISA's code paths, the bytes of a hasher's
+  state and the peak stack of hashing one message.";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let result = match args.first().map(String::as_str) {
         Some("bench") => bench::main(&args),
         Some("summary") => summary::main(&args),
+        Some("footprint") => footprint::main(&args),
         _ => Err(USAGE.to_owned()),
     };
     match result {

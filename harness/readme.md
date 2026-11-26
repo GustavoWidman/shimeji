@@ -7,6 +7,7 @@ measures how fast each one hashes. run everything from `nix develop`.
 cargo test -p harness --release                    # differential test
 cargo run -p harness --release -- bench            # writes results/<host>-<time>.tsv
 cargo run -p harness --release -- summary results/<file>.tsv
+cargo run -p harness --release -- footprint        # state and stack bytes
 ```
 
 ## implementations
@@ -168,3 +169,18 @@ where neither works, the columns are empty and the header says why.
 speedup over `--baseline` (default `kisa-ref`).
 `--cpus 6,7` keeps only repetitions that ended on those cores, to drop runs
 that migrated between core clusters.
+
+## footprint
+
+neither shimeji nor KISA's code allocates, so a hash uses the state its
+caller keeps and the stack of the call. `footprint` prints both for
+shimeji's code paths (`digest`, the portable code, and on x86_64 the SSSE3
+and AVX2 kernels) and KISA's variants: the state is `size_of` of shimeji's
+hasher and `sizeof` of KISA's context struct, which `build.rs` exports from
+each KISA unit as `kisa_<variant>_lsh256_context_size`. the stack is
+measured: each path hashes a 1000-byte message on a thread whose stack the
+program allocates; the thread fills the stack below its stack pointer with a
+pattern just before the call, and the deepest word that lost the pattern
+marks the peak, the most of 32 runs. the stack of calling an empty function
+the same way is subtracted. `paper/analysis/footprint.py`
+runs it in several processes and keeps the largest stack of each path.
