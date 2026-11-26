@@ -8,7 +8,7 @@
 //! varying offset in its buffer so unaligned loads are exercised.
 //!
 //! LSH-512-224 has no Crypto++ test vector, so for it the comparisons with
-//! KISA's, Crypto++'s and go-krypto's code are the only check.
+//! the other implementations are the only check.
 
 use harness::{Digest, Family, Implementation, Rng, implementations};
 

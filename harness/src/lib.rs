@@ -35,6 +35,7 @@ mod cryptopp;
 mod digestpp;
 mod gokrypto;
 mod kisa;
+mod lsh256rs;
 #[cfg(target_arch = "x86_64")]
 mod lshsimd;
 #[cfg(target_arch = "x86_64")]
@@ -216,6 +217,8 @@ pub static IMPLEMENTATIONS: &[Implementation] = &[
     cryptopp::AVX2_512,
     digestpp::LSH256,
     digestpp::LSH512,
+    lsh256rs::LSH256,
+    lsh256rs::LSH512,
     #[cfg(target_arch = "aarch64")]
     gokrypto::NEON_256,
     #[cfg(target_arch = "aarch64")]

@@ -92,6 +92,12 @@ wrong digests, also for digestpp's own test vectors; `flake.nix` applies
 of one call per 64-byte message changes its time by less than 0.5% on an
 i9-13900K, so it has no `repeat`.
 
+`lsh256-rs` is the `lsh256` crate
+(https://github.com/corp0ratestarts-cmd/LSH-256-Korea-KS-X-3262-RUST),
+portable Rust without `unsafe` and with all six digests, a git dependency
+in `Cargo.toml` pinned by commit and built with the workspace's release
+profile. its one-shot functions each allocate the digest as a `Vec`.
+
 go-krypto (https://github.com/RyuaNerin/go-krypto, Go with assembly) is
 pinned to v1.3.0 by `go/go.mod` and `go/go.sum`; the first build downloads
 it through the Go module proxy. it is built with Go 1.26, because its amd64

@@ -23,8 +23,14 @@ name = "harness"
 version = "0.0.0"
 dependencies = [
  "cc",
+ "lsh256",
  "shimeji",
 ]
+
+[[package]]
+name = "lsh256"
+version = "0.1.0"
+source = "git+https://github.com/corp0ratestarts-cmd/LSH-256-Korea-KS-X-3262-RUST?rev=4dea1ccaec9e22a3e1c10df89ce7b180b38fbc67#4dea1ccaec9e22a3e1c10df89ce7b180b38fbc67"
 
 [[package]]
 name = "shimeji"
